@@ -1,98 +1,83 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import Headerhome from '@/src/components/Headerhome';
+import { AgendaCard } from '@/src/components/CardAgenda';
+import { AcessosCard } from '@/src/components/Acessos';
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const backgroundColor = colorScheme === 'dark' ? '#151718' : '#fff';
+  const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';                                                                                                                                                                                                           
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={[styles.container, { backgroundColor }]}>
+      <View>
+        <Headerhome title="Ola dr." />
+      </View>
+      <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}> Acessos rapidos</Text>
+      <View style={styles.gridContainer}>
+        <AcessosCard 
+          iconFamily="FontAwesome5" 
+          iconName="address-book" 
+          iconColor="#357eec" 
+          iconSize={30}
+          title="Visitas agendadas" 
+          onPress={() => {}} 
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <AcessosCard 
+          iconFamily="MaterialCommunityIcons" 
+          iconName="file-document-alert-outline" 
+          iconColor="#f69606" 
+          iconSize={30}
+          title="Evoluçoes pendentes" 
+          onPress={() => {}} 
+        />
+        <AcessosCard 
+          iconFamily="MaterialIcons" 
+          iconName="person-add-alt" 
+          iconColor="#0f9d58" 
+          iconSize={30}
+          title="Pacientes novos" 
+          onPress={() => {}} 
+        />
+      </View>
+       <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}> Agendamentos do dia</Text>
+      <View>
+        <AgendaCard
+          horario="08:00"
+          nome="Issac . Consulta de rotina"
+          endereco="Rua Exemplo, 123"
+        />
+        <AgendaCard
+          horario="09:30"
+          nome="Maria Oliveira . Retorno"
+          endereco="Rua Exemplo, 456"
+        />
+        <AgendaCard
+          horario="11:00"
+          nome="Carlos Souza . Exame de sangue"
+          endereco="Rua Exemplo, 789"
+        />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  gridContainer: {
+    flexDirection: 'row',     // Coloca os itens LADO A LADO
+    flexWrap: 'wrap',         // Quebra para a próxima linha quando não couber
+    justifyContent: 'space-between', // Distribui o espaço entre eles igualmente
   },
 });
