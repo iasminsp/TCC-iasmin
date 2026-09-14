@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 import Header from '../components/Header';
 import { FunçoesCard } from '@/src/components/Funções';
 
@@ -13,6 +14,7 @@ import { FunçoesCard } from '@/src/components/Funções';
   }
 
 export default function PerfilScreen( { status = "Ativo" }: { status?: string }) {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const backgroundColor = colorScheme === 'dark' ? '#151718' : '#fff';
   const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
@@ -27,9 +29,6 @@ export default function PerfilScreen( { status = "Ativo" }: { status?: string })
   return (
     
     <View style={[styles.container, { backgroundColor }]}>
-      <View>
-        <Header title="Paciente" />
-      </View>
       <View style={{  flexDirection: 'row', alignItems: 'center', marginTop: 40 }}>
         <Ionicons name="person-circle-sharp" size={100} color={textColor} />
         <View style={{flexDirection: 'column', marginLeft: 20}}>
@@ -41,9 +40,9 @@ export default function PerfilScreen( { status = "Ativo" }: { status?: string })
       <View style={styles.statusBadge}>
         <Text style={styles.statusText}>{status}</Text>
       </View>
-      <FunçoesCard iconFamily="FontAwesome5" iconName="folder-open" iconSize={20} title="Evolução SOAP" onPress={() => {}} /> 
-      <FunçoesCard iconFamily="MaterialCommunityIcons" iconName="file-document-plus-outline" iconSize={20} title="Ficha de Admissão/Elegiabilidade" onPress={() => {}} />  
-      <FunçoesCard iconFamily="MaterialCommunityIcons" iconName="folder-home-outline"iconSize={20}  title="Ficha de Atendimento Domiciliar" onPress={() => {}} /> 
+      <FunçoesCard iconFamily="FontAwesome5" iconName="folder-open" iconSize={20} title="Evolução SOAP" onPress={() => router.push('/Soap')} /> 
+      <FunçoesCard iconFamily="MaterialCommunityIcons" iconName="file-document-plus-outline" iconSize={20} title="Ficha de Admissão/Elegiabilidade" onPress={() => router.push('/elegiabilidade')}  />  
+      <FunçoesCard iconFamily="MaterialCommunityIcons" iconName="folder-home-outline"iconSize={20}  title="Ficha de Atendimento Domiciliar" onPress={() => router.push('/atendimentoDomiciliar')} /> 
       <FunçoesCard iconFamily="MaterialCommunityIcons" iconName="home-group" iconSize={20}  title="Cadastro Domiciliar" onPress={() => {}} />
       <FunçoesCard iconFamily="Ionicons" iconName="document-attach-outline" iconSize={20} title="Documentos/historico" onPress={() => {}}/>
     

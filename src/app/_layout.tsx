@@ -18,9 +18,61 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        <Stack.Screen name="perfilPacientes" options={{ headerShown: false }} />
+        <Stack.Screen name="perfilPacientes" options={{ 
+            headerShown: true,
+            title: 'Perfil do Paciente',          
+            headerTitleAlign: 'center',         
+            headerStyle: {
+              backgroundColor: '#2563EB',
+            },
+            headerTintColor: '#FFFFFF',         
+            headerTitleStyle: {
+              fontWeight: 'bold',                
+              fontSize: 18,
+            },
+                 
+          }} />
+        <Stack.Screen name="elegiabilidade" options={{
+            headerShown: true,
+            title: 'Ficha de Admissão/Elegiabilidade',
+            headerTitleAlign: 'center',         
+            headerStyle: {
+              backgroundColor: '#2563EB',
+            },
+            headerTintColor: '#FFFFFF',         
+            headerTitleStyle: {
+              fontWeight: 'bold',                
+              fontSize: 18,
+            },
+            }} />
+            <Stack.Screen name="atendimentoDomiciliar" options={{
+            headerShown: true,
+            title: 'Ficha de Atendimento Domiciliar',
+            headerTitleAlign: 'center',         
+            headerStyle: {
+              backgroundColor: '#2563EB',
+            },
+            headerTintColor: '#FFFFFF',         
+            headerTitleStyle: {
+              fontWeight: 'bold',                
+              fontSize: 18,
+            },
+            }} />
+            <Stack.Screen name="Soap" options={{
+            headerShown: true,
+            title: 'Evolução SOAP',
+            headerTitleAlign: 'center',         
+            headerStyle: {
+              backgroundColor: '#2563EB',
+            },
+            headerTintColor: '#FFFFFF',         
+            headerTitleStyle: {
+              fontWeight: 'bold',                
+              fontSize: 18,
+            },
+          }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
   );
 }

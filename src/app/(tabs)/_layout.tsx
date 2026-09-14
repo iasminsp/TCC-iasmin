@@ -1,23 +1,28 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import EvilIcons from '@expo/vector-icons/EvilIcons';
-import { Ionicons } from '@expo/vector-icons';
-import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
-import Octicons from '@expo/vector-icons/Octicons';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import EvilIcons from '@expo/vector-icons/EvilIcons';
+import Octicons from '@expo/vector-icons/Octicons';
+import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[isDark ? 'dark' : 'light']?.tint || '#2F80ED',
+        tabBarInactiveTintColor: isDark ? '#8E8E93' : '#687076',
         headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarButton: HapticTab as any,
+        tabBarStyle: {
+          backgroundColor: isDark ? '#121212' : '#FFFFFF',
+          borderTopColor: isDark ? '#27272A' : '#E5E5EA',
+        },
       }}>
       <Tabs.Screen
         name="index"
@@ -48,8 +53,7 @@ export default function TabLayout() {
         options={{
           title: 'Perfil',
           tabBarLabelStyle: { fontSize: 9 },
-          tabBarIcon: ({ color }) => <SimpleLineIcons name="menu"  size={26} color={color} />,
-        
+          tabBarIcon: ({ color }) => <SimpleLineIcons name="menu" size={26} color={color} />,
         }}
       />
     </Tabs>

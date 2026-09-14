@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface HeaderProps {
   title: string;
   iconName?: keyof typeof Ionicons.glyphMap;
   showBack?: boolean; 
+  onIconPress?: () => void;
 }
 
-export default function Header({ title, iconName, showBack = true }: HeaderProps) {
+export default function Header({ title, iconName, showBack = true, onIconPress }: HeaderProps) {
+
   return ( 
    <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.headerContainer}>
@@ -25,8 +27,8 @@ export default function Header({ title, iconName, showBack = true }: HeaderProps
 
         {/* Ícone Direita */}
         {iconName && (
-          <TouchableOpacity onPress={() => console.log('Ícone Clicado')}>
-            <Ionicons name={iconName} size={24} color="#FFF" />
+          <TouchableOpacity onPress={onIconPress}>
+            <Ionicons name={iconName} size={24} color="#fff" />
           </TouchableOpacity>
         )}
       </View>

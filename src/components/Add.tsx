@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 interface AddProps {
+  title: string;
   onPress?: () => void;
 }
 
-export function AddCard({ onPress}: AddProps) {
+export function AddCard({ title, onPress }: AddProps) {
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
@@ -16,13 +17,13 @@ export function AddCard({ onPress}: AddProps) {
       onPress={onPress}
       style={[styles.cardContainer]}
     >
-      <View style={[{ marginLeft: 78 }]}>
+      <View style={[{ marginLeft: 98 }]}>
         <AntDesign name="plus" size={24} color="white" />
       </View>
 
       <View style={styles.infoContainer}>
         <Text style={[styles.text]}>
-          Adicionar nova visita
+          {title}
         </Text>
       </View>
     </TouchableOpacity>
@@ -53,6 +54,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
+   
   },
   infoContainer: {
     flex: 1,
