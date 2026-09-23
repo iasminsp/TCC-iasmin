@@ -21,7 +21,7 @@ export function BaseModal({
   onClose,
   title,
   children,
-  animationType = 'slide',
+  animationType = 'fade',
 }: BaseModalProps) {
   return (
     <Modal
