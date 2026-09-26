@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, useColorScheme, Button } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, useColorScheme, Button, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
+import { db, auth } from '../../config/firebaseConfig'; // ajuste o caminho conforme suas pastas
 import Header from '../../components/Header';
 import { PacientesCard } from '@/src/components/Pacientes';
 import { PesquisaCard } from '@/src/components/Pesquisa';
 import { BaseModal } from '@/src/components/modal';
+
+interface Paciente {
+  id: string;
+  nome: string;
+  condicao: string;
+  idade: string;
+}
 
 export default function PacientesScreen() {
   const colorScheme = useColorScheme();
@@ -14,34 +23,96 @@ export default function PacientesScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Estados do formulário de cadastro de paciente
+  // Lista iniciando completamente vazia
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Estados do formulário de cadastro
   const [nome, setNome] = useState('');
   const [condicao, setCondicao] = useState('');
   const [idade, setIdade] = useState('');
 
-  const handleSalvarPaciente = () => {
-    console.log('Paciente salvo:', { nome, condicao, idade });
+  //pra funcionar on e offline
+  useEffect(() => {
+    const q = query(collection(db, 'pacientes'), orderBy('createdAt', 'desc'));
     
-    // Limpa os campos e fecha o modal
-    setNome('');
-    setCondicao('');
-    setIdade('');
-    setModalVisible(false);
+    // O onSnapshot lê do cache local instantaneamente e do servidor quando online
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const listaPacientes: Paciente[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        nome: doc.data().nome,
+        condicao: doc.data().condicao,
+        idade: doc.data().idade,
+      }));
+
+      setPacientes(listaPacientes);
+      setLoading(false);
+    }, (error) => {
+      console.error('Erro Firestore:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSalvarPaciente = async () => {
+    if (!nome.trim() || !condicao.trim() || !idade.trim()) return;
+
+    try {
+      // addDoc escreve no cache local imediatamente (a UI atualiza na hora)
+      // e enfileira para subir para o servidor assim que houver internet.
+      await addDoc(collection(db, 'pacientes'), {
+        nome,
+        condicao,
+        idade: idade.includes('anos') ? idade : `${idade} anos`,
+        createdAt: serverTimestamp(),
+      });
+
+      // Limpa os campos e fecha o modal
+      setNome('');
+      setCondicao('');
+      setIdade('');
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Erro ao cadastrar paciente:', error);
+    }
   };
 
   return (
-    
     <View style={[styles.container, { backgroundColor }]}>
-      <View>
-        <Header title="Pacientes" iconName="person-add-outline" onIconPress={() => setModalVisible(true)} />
-      </View>
+      <Header title="Pacientes" iconName="person-add-outline" onIconPress={() => setModalVisible(true)} />
       <PesquisaCard onPress={() => {}} />
-        
-      <PacientesCard nome="Maria Oliveira" condicao="Hipertensão" idade="52 anos" onPress={() => router.push('/perfilPacientes')} />
-      <PacientesCard nome="Carlos Souza" condicao="Asma" idade="30 anos" onPress={() => router.push('/perfilPacientes')} />
-      <PacientesCard nome="Ana Santos" condicao="Obesidade" idade="40 anos" onPress={() => router.push('/perfilPacientes')} />
-      <PacientesCard nome="Pedro Lima" condicao="Diabetes Tipo 2" idade="55 anos" onPress={() => router.push('/perfilPacientes')} />
-      <PacientesCard nome="João da Silva" condicao="Diabetes" idade="45 anos" onPress={() => router.push('/perfilPacientes')} />
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {pacientes.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: textColor }]}>Nenhum paciente cadastrado.</Text>
+              <Text style={styles.emptySubText}>Toque no ícone + no topo para adicionar.</Text>
+            </View>
+          ) : (
+            pacientes.map((paciente) => (
+              <PacientesCard
+                key={paciente.id}
+                nome={paciente.nome}
+                condicao={paciente.condicao}
+                idade={paciente.idade}
+                onPress={() => router.push({
+                  pathname: '/perfilPacientes', // ou o nome correto da sua rota de perfil
+                  params: { 
+                    id: paciente.id,
+                    nome: paciente.nome, 
+                    condicao: paciente.condicao, 
+                    idade: paciente.idade 
+                  }
+                })}
+              />
+            ))
+          )}
+        </ScrollView>
+      )}
 
       <BaseModal
         visible={modalVisible}
@@ -50,43 +121,53 @@ export default function PacientesScreen() {
       >
         <TextInput
           placeholder="Nome Completo"
+          placeholderTextColor="#9ca3af"
           value={nome}
           onChangeText={setNome}
           style={styles.input}
         />
         <TextInput
           placeholder="Condição (ex: Diabetes, Hipertensão)"
+          placeholderTextColor="#9ca3af"
           value={condicao}
           onChangeText={setCondicao}
           style={styles.input}
         />
         <TextInput
-          placeholder="Idade"
+          placeholder="Idade ou Data de Nascimento"
+          placeholderTextColor="#9ca3af"
           value={idade}
           onChangeText={setIdade}
-          keyboardType="numeric"
           style={styles.input}
         />
-        
+
         <Button title="Salvar Paciente" color="#2563EB" onPress={handleSalvarPaciente} />
       </BaseModal>
     </View>
-        
-    
-  )
+  );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header:{
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  emptyContainer: {
     alignItems: 'center',
-    marginBottom: 20,
-    marginLeft:"90%",
-    marginTop:'-15%',
-    backgroundColor: 'blue'
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#6b7280',
   },
   input: {
     borderWidth: 1,
@@ -94,5 +175,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
-  }
-})
+  },
+});

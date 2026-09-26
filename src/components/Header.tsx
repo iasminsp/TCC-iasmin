@@ -15,12 +15,7 @@ export default function Header({ title, iconName, showBack = true, onIconPress }
   return ( 
    <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.headerContainer}>
-        {/* Botão Voltar */}
-        {showBack && (
-          <TouchableOpacity onPress={() =>console.log('Ícone Clicado')}>
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-        )}
+       
 
         {/* Título */}
         <Text style={styles.headerTitle}>{title}</Text>
@@ -54,6 +49,10 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlign: 'center',
+    flex: 1,
     
     
   },
