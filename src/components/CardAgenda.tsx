@@ -15,14 +15,20 @@ export function AgendaCard({horario, nome, endereco, status = 'Agendado', onPres
     const backgroundColor = colorScheme === 'dark' ? '#3b3f41' : '#fff';
     const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
 
+    const getStatusTextColor = () => {
+    switch (status) {
+      case 'Atendido':
+        return '#22c55e'; // Verde
+      case 'Faltou/Cancelado':
+        return '#ef4444'; // Vermelho
+      default:
+        return '#2563eb'; // Azul padrão (Agendado)
+    }
+  };
+
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onPress}
-      style={[
-        styles.cardContainer,{ backgroundColor},
-      ]}
-    >
+      activeOpacity={0.7} onPress={onPress} style={[styles.cardContainer,{ backgroundColor},]}>
       {/* Bloco do Horário */}
       <View style={[styles.timeBox, { backgroundColor: '#0f66e8'}]}>
         <Text style={[styles.timeText, { color: 'white' }]}>
@@ -41,8 +47,10 @@ export function AgendaCard({horario, nome, endereco, status = 'Agendado', onPres
       </View>
 
       {/* Tag de Status */}
-      <View style={styles.statusBadge}>
-        <Text style={styles.statusText}>{status}</Text>
+     <View style={styles.statusTag}>
+        <Text style={[styles.statusText, { color: getStatusTextColor() }]}>
+          {status}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -89,8 +97,8 @@ const styles = StyleSheet.create({
   enderecoText: {
     fontSize: 12,
   },
-  statusBadge: {
-    backgroundColor: '#EFF6FF',
+  statusTag: {
+    backgroundColor: '#e0e7ff', // Azul claro
     paddingVertical: 2,
     paddingHorizontal: 6,
     borderRadius: 6,

@@ -1,67 +1,58 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useColorScheme } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface PesquisaProps {
+  value?: string;
+  onChangeText?: (text: string) => void;
   onPress?: () => void;
 }
 
-export function PesquisaCard({ onPress}: PesquisaProps) {
+export function PesquisaCard({ value, onChangeText }: PesquisaProps) {
   const colorScheme = useColorScheme();
     const backgroundColor = colorScheme === 'dark' ? '#3b3f418a' : '#fff';
     const textColor = colorScheme === 'dark' ? '#e6e8ea9d' : '#69717584';
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onPress}
+    <View
       style={[
-        styles.cardContainer,{ backgroundColor},
+        styles.container,
+        { backgroundColor } // Mantém a cor de fundo dinâmica do tema
       ]}
     >
-      <View>
-        <Ionicons name="search-outline" size={28} color={textColor } />
-      </View>
+      <Ionicons name="search-outline" size={28} color={textColor } />
+      
 
-      <View style={styles.infoContainer}>
-        <Text style={[styles.text, { color: textColor }]}>
-          pesquisar pacientes
-        </Text>
-      </View>
-    </TouchableOpacity>
+      <TextInput
+        placeholder="Pesquisar paciente..."
+        placeholderTextColor="#9ca3af"
+        value={value}
+        onChangeText={onChangeText}
+        style={styles.input}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cardContainer: {
+  container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 8,
-    borderRadius: 22,
-    borderColor: '#d1d5db7e',
+    borderRadius: 12,
     borderWidth: 1,
-    marginLeft: "5%",
-    marginTop: 30,
-    marginBottom: 20,
-    width:'90%',
-    height: 45,
-    // Sombra leve para destacar no fundo claro
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: '#3741512e',
+    paddingHorizontal: 12,
+    marginHorizontal: 16,
+    marginVertical: 10,
+    height: 44,
   },
-  infoContainer: {
+  icon: {
+    marginRight: 8,
+  },
+  input: {
     flex: 1,
-    marginLeft: 27,
-    justifyContent: 'center',
-  },
-  text: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 2,
+    fontSize: 14,
+    color: '#111827',
   },
 });

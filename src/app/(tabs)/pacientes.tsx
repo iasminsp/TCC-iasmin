@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Button, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'expo-router';
-import { db, auth } from '../../config/firebaseConfig'; // ajuste o caminho conforme suas pastas
+import { db, } from '../../config/firebaseConfig'; // ajuste o caminho conforme suas pastas
 import Header from '../../components/Header';
 import { PacientesCard } from '@/src/components/Pacientes';
 import { PesquisaCard } from '@/src/components/Pesquisa';
@@ -26,6 +26,8 @@ export default function PacientesScreen() {
   // Lista iniciando completamente vazia
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [termoBusca, setTermoBusca] = useState('');
 
   // Estados do formulário de cadastro
   const [nome, setNome] = useState('');
@@ -55,6 +57,14 @@ export default function PacientesScreen() {
     return () => unsubscribe();
   }, []);
 
+  const pacientesFiltrados = pacientes.filter((paciente) => {
+    const busca = termoBusca.toLowerCase().trim();
+    return (
+      paciente.nome.toLowerCase().includes(busca) ||
+      paciente.condicao.toLowerCase().includes(busca)
+    );
+  });
+
   const handleSalvarPaciente = async () => {
     if (!nome.trim() || !condicao.trim() || !idade.trim()) return;
 
@@ -81,7 +91,10 @@ export default function PacientesScreen() {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <Header title="Pacientes" iconName="person-add-outline" onIconPress={() => setModalVisible(true)} />
-      <PesquisaCard onPress={() => {}} />
+      <PesquisaCard 
+        value={termoBusca} 
+        onChangeText={setTermoBusca} 
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />
@@ -93,7 +106,7 @@ export default function PacientesScreen() {
               <Text style={styles.emptySubText}>Toque no ícone + no topo para adicionar.</Text>
             </View>
           ) : (
-            pacientes.map((paciente) => (
+            pacientesFiltrados.map((paciente) => (
               <PacientesCard
                 key={paciente.id}
                 nome={paciente.nome}

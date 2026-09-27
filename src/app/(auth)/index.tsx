@@ -7,8 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { loginUser } from '../../services/authService';
@@ -39,6 +41,7 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient colors={['#1d4ed8', '#9a6010']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
       <Text style={styles.brandTitle}>VIVER Sistemas</Text>
       
       <View style={styles.headerArea}>
@@ -92,12 +95,13 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 50 },
+  container: { flex: 1 },
   brandTitle: { color: '#ffffff', fontSize: 14, fontWeight: 'bold', fontStyle: 'italic', paddingHorizontal: 24 },
   headerArea: { marginTop: 40, marginBottom: 40, paddingHorizontal: 32 },
   headerTitle: { color: '#ffffff', fontSize: 32, fontWeight: '400', lineHeight: 38 },

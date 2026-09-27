@@ -8,14 +8,14 @@ import {
   Modal, 
   TextInput, 
   Button, 
+  Alert,
   ScrollView, 
   ActivityIndicator,
-  FlatList
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { collection, addDoc, onSnapshot, query, where, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../config/firebaseConfig'; 
+import { collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth} from '../../config/firebaseConfig'; 
 import Header from '../../components/Header';
 import { AgendaCard } from '../../components/CardAgenda';
 import { AddCard } from '../../components/Add';
@@ -32,6 +32,7 @@ interface Visita {
   horario: string;
   endereco: string;
   data: string;
+  status: string;
 }
 
 type BaseModalProps = {
@@ -78,6 +79,9 @@ export default function AgendaScreen() {
   const [horario, setHorario] = useState('');
   const [endereco, setEndereco] = useState('');
 
+  const [visitaSelecionada, setVisitaSelecionada] = useState<Visita | null>(null);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+
   const formattedDateKey = date.toISOString().split('T')[0];
   const formattedDateBR = date.toLocaleDateString('pt-BR');
 
@@ -96,9 +100,17 @@ export default function AgendaScreen() {
 
   // 2. Busca as visitas filtradas pela data selecionada
   useEffect(() => {
-    setLoading(true);
-    const q = query(collection(db, 'visitas'), where('data', '==', formattedDateKey));
+    const user = auth.currentUser;
+  if (!user) return;
 
+  setLoading(true);
+
+  // Consulta que traz APENAS as visitas da data selecionada E pertencentes ao médico logado
+  const q = query(
+    collection(db, 'visitas'),
+    where('data', '==', formattedDateKey),
+    where('userId', '==', user.uid)
+  );
     const unsubVisitas = onSnapshot(q, (snapshot) => {
       const docs: Visita[] = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -107,6 +119,7 @@ export default function AgendaScreen() {
         horario: doc.data().horario,
         endereco: doc.data().endereco,
         data: doc.data().data,
+        status: doc.data().status || 'Agendado',
       }));
 
       docs.sort((a, b) => a.horario.localeCompare(b.horario));
@@ -143,29 +156,50 @@ export default function AgendaScreen() {
   };
 
   const handleSalvarVisita = async () => {
-    const nomeFinal = pacienteSelecionado ? pacienteSelecionado.nome : buscaPaciente;
-    if (!nomeFinal.trim() || !horario.trim()) return;
+    const user = auth.currentUser;
+  if (!user) {
+    Alert.alert('Erro', 'Você precisa estar logado para agendar uma visita.');
+    return;
+  }
+
+  const nomeFinal = pacienteSelecionado ? pacienteSelecionado.nome : buscaPaciente;
+  if (!nomeFinal.trim() || !horario.trim()) return;
+
+  try {
+    await addDoc(collection(db, 'visitas'), {
+      userId: user.uid, // VINCULA A VISITA AO MÉDICO LOGADO
+      pacienteNome: nomeFinal,
+      motivo: motivo.trim(),
+      horario: horario.trim(),
+      endereco: endereco.trim() || 'Endereço não informado',
+      data: formattedDateKey,
+      createdAt: serverTimestamp(),
+    });
+
+    // Limpa os campos
+    setBuscaPaciente('');
+    setPacienteSelecionado(null);
+    setPacientesFiltrados([]);
+    setMotivo('');
+    setHorario('');
+    setEndereco('');
+    setModalVisible(false);
+  } catch (error) {
+    console.error('Erro ao salvar visita:', error);
+  }
+};
+  const handleAtualizarStatus = async (novoStatus: string) => {
+    if (!visitaSelecionada) return;
 
     try {
-      await addDoc(collection(db, 'visitas'), {
-        pacienteNome: nomeFinal,
-        motivo: motivo.trim(),
-        horario: horario.trim(),
-        endereco: endereco.trim() || 'Endereço não informado',
-        data: formattedDateKey,
-        createdAt: serverTimestamp(),
+      const visitaRef = doc(db, 'visitas', visitaSelecionada.id);
+      await updateDoc(visitaRef, {
+        status: novoStatus,
       });
-
-      // Limpa os campos
-      setBuscaPaciente('');
-      setPacienteSelecionado(null);
-      setPacientesFiltrados([]);
-      setMotivo('');
-      setHorario('');
-      setEndereco('');
-      setModalVisible(false);
+      setStatusModalVisible(false);
+      setVisitaSelecionada(null);
     } catch (error) {
-      console.error('Erro ao salvar visita:', error);
+      console.error('Erro ao atualizar status:', error);
     }
   };
 
@@ -224,6 +258,11 @@ export default function AgendaScreen() {
               horario={visita.horario}
               nome={visita.motivo ? `${visita.pacienteNome} • ${visita.motivo}` : visita.pacienteNome}
               endereco={visita.endereco}
+              status={visita.status}
+              onPress={() => {
+                setVisitaSelecionada(visita);
+                setStatusModalVisible(true);
+              }}
             />
           ))
         )}
@@ -302,6 +341,30 @@ export default function AgendaScreen() {
 
         <Button title="Salvar Visita" color="#2563EB" onPress={handleSalvarVisita} />
       </BaseModal>
+      <Modal visible={statusModalVisible} transparent animationType="fade" onRequestClose={() => setStatusModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Alterar Status</Text>
+            <Text style={{ color: '#6b7280', marginBottom: 6 }}>
+              {visitaSelecionada?.pacienteNome} às {visitaSelecionada?.horario}
+            </Text>
+
+            <TouchableOpacity style={[styles.statusOptionButton, { backgroundColor: '#f0fdf4' }]} onPress={() => handleAtualizarStatus('Atendido')}>
+              <Text style={{ color: '#16a34a', fontWeight: 'bold' }}>Marcar como Atendido</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.statusOptionButton, { backgroundColor: '#fef2f2' }]} onPress={() => handleAtualizarStatus('Faltou/Cancelado')}>
+              <Text style={{ color: '#dc2626', fontWeight: 'bold' }}>Marcar como Faltou/Cancelado</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.statusOptionButton, { backgroundColor: '#eff6ff' }]} onPress={() => handleAtualizarStatus('Agendado')}>
+              <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>Manter como Agendado</Text>
+            </TouchableOpacity>
+
+            <Button title="Cancelar" color="#ef4444" onPress={() => setStatusModalVisible(false)} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -369,5 +432,12 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontSize: 14,
     color: '#1f2937',
+  },
+  statusOptionButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
 });
