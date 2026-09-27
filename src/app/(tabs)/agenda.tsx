@@ -15,6 +15,7 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useRouter } from 'expo-router'; 
 import { db, auth} from '../../config/firebaseConfig'; 
 import Header from '../../components/Header';
 import { AgendaCard } from '../../components/CardAgenda';
@@ -57,6 +58,7 @@ function BaseModal({ visible, onClose, title, children }: BaseModalProps) {
 }
 
 export default function AgendaScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const backgroundColor = colorScheme === 'dark' ? '#151718' : '#fff';
   const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
@@ -64,6 +66,8 @@ export default function AgendaScreen() {
   // Estados de Data
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
+  const [horaDate, setHoraDate] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   // Estados de Dados do Firestore
   const [visitas, setVisitas] = useState<Visita[]>([]);
@@ -132,6 +136,18 @@ export default function AgendaScreen() {
 
     return () => unsubVisitas();
   }, [formattedDateKey]);
+
+
+  const onChangeTime = (event: any, selectedTime?: Date) => {
+  setShowTimePicker(false);
+  if (selectedTime) {
+    setHoraDate(selectedTime);
+    // Formata para HH:MM automático
+    const horas = selectedTime.getHours().toString().padStart(2, '0');
+    const minutos = selectedTime.getMinutes().toString().padStart(2, '0');
+    setHorario(`${horas}:${minutos}`);
+  }
+};
 
   // Função para filtrar a lista ao digitar
   const handleDigitarPaciente = (texto: string) => {
@@ -220,6 +236,17 @@ export default function AgendaScreen() {
     if (selectedDate) setDate(selectedDate);
   };
 
+  const handleAbrirPerfilPaciente = (visita: Visita) => {
+    router.push({
+      pathname: '/perfilPacientes', // Altere para a rota correta da sua estrutura se necessário
+      params: {
+        nome: visita.pacienteNome,
+        condicao: visita.motivo || 'Atendimento agendado',
+        idade: 'Não informada',
+      },
+    });
+  };
+
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <Header 
@@ -259,7 +286,9 @@ export default function AgendaScreen() {
               nome={visita.motivo ? `${visita.pacienteNome} • ${visita.motivo}` : visita.pacienteNome}
               endereco={visita.endereco}
               status={visita.status}
-              onPress={() => {
+              onPress={() => handleAbrirPerfilPaciente(visita)}
+              // Ao clicar na TAG/BADGE de status -> Abre o Modal de Alteração
+              onStatusPress={() => {
                 setVisitaSelecionada(visita);
                 setStatusModalVisible(true);
               }}
@@ -317,13 +346,25 @@ export default function AgendaScreen() {
           )}
         </View>
 
-        <TextInput
-          placeholder="Horário (ex: 09:00)"
-          placeholderTextColor="#9ca3af"
-          value={horario}
-          onChangeText={setHorario}
-          style={styles.input}
-        />
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => setShowTimePicker(true)}
+          style={styles.inputClickable}
+        >
+        <Text style={[styles.inputClickableText, { color: horario ? '#6b7280af' : '#6b7280' }]}>            
+          {horario ? `Horário: ${horario}` : 'Selecione o horário...'}
+          </Text>
+        </TouchableOpacity>
+
+        {showTimePicker && (
+          <DateTimePicker
+            value={horaDate}
+            mode="time"
+            is24Hour={true}
+            display="default"
+            onChange={onChangeTime}
+          />
+        )}
         <TextInput
           placeholder="Motivo da visita (ex: Consulta de rotina)"
           placeholderTextColor="#9ca3af"
@@ -341,6 +382,7 @@ export default function AgendaScreen() {
 
         <Button title="Salvar Visita" color="#2563EB" onPress={handleSalvarVisita} />
       </BaseModal>
+
       <Modal visible={statusModalVisible} transparent animationType="fade" onRequestClose={() => setStatusModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -416,6 +458,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
   },
+
+  inputClickable: {
+    borderWidth: 1,
+    borderColor: '#b8a9a995',
+    borderRadius: 8,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  inputClickableText: {
+    fontSize: 14,
+   },
   suggestionsContainer: {
     borderWidth: 1,
     borderColor: '#2563EB',

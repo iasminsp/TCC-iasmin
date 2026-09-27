@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 
 interface AgendaCardProps {
   horario: string;
@@ -8,101 +7,89 @@ interface AgendaCardProps {
   endereco: string;
   status?: string;
   onPress?: () => void;
+  onStatusPress?: () => void;
 }
 
-export function AgendaCard({horario, nome, endereco, status = 'Agendado', onPress}: AgendaCardProps) {
+export function AgendaCard({ 
+  horario, 
+  nome, 
+  endereco, 
+  status = 'Agendado', 
+  onPress, 
+  onStatusPress 
+}: AgendaCardProps) {
   const colorScheme = useColorScheme();
-    const backgroundColor = colorScheme === 'dark' ? '#3b3f41' : '#fff';
-    const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
-
-    const getStatusTextColor = () => {
-    switch (status) {
-      case 'Atendido':
-        return '#22c55e'; // Verde
-      case 'Faltou/Cancelado':
-        return '#ef4444'; // Vermelho
-      default:
-        return '#2563eb'; // Azul padrão (Agendado)
-    }
-  };
+  
+  // Define as cores dinâmicas para o cartão e textos com base no tema
+  const cardBackgroundColor = colorScheme === 'dark' ? '#2A2D32' : '#f3f4f6';
+  const nameTextColor = colorScheme === 'dark' ? '#ffffff' : '#11181C';
+  const addressTextColor = colorScheme === 'dark' ? '#9CA3AF' : '#6b7280';
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7} onPress={onPress} style={[styles.cardContainer,{ backgroundColor},]}>
-      {/* Bloco do Horário */}
-      <View style={[styles.timeBox, { backgroundColor: '#0f66e8'}]}>
-        <Text style={[styles.timeText, { color: 'white' }]}>
-          {horario}
-        </Text>
+    <TouchableOpacity 
+      activeOpacity={0.8} 
+      onPress={onPress} 
+      style={[styles.card, { backgroundColor: cardBackgroundColor }]}
+    >
+      <View style={styles.timeBadge}>
+        <Text style={styles.timeText}>{horario}</Text>
       </View>
 
-      {/* Bloco das Informações (Nome e Endereço) */}
       <View style={styles.infoContainer}>
-        <Text style={[styles.nomeText, { color: textColor }]}>
+        <Text style={[styles.nameText, { color: nameTextColor }]} numberOfLines={1}>
           {nome}
         </Text>
-        <Text style={[styles.enderecoText, { color: textColor }]}>
+        <Text style={[styles.addressText, { color: addressTextColor }]} numberOfLines={1}>
           {endereco}
         </Text>
       </View>
 
-      {/* Tag de Status */}
-     <View style={styles.statusTag}>
-        <Text style={[styles.statusText, { color: getStatusTextColor() }]}>
-          {status}
-        </Text>
-      </View>
+      {/* Clique na Tag/Badge de Status */}
+      <TouchableOpacity activeOpacity={0.7} onPress={onStatusPress} style={styles.statusBadge}>
+        <Text style={styles.statusText}>{status}</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  cardContainer: {
+  card: {
     flexDirection: 'row',
+    borderRadius: 16,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 10,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-    borderRadius: 22,
-    marginLeft: "5%",
-    marginTop: 20,
-    width:'90%',
-    // Sombra leve para destacar no fundo claro
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
   },
-  timeBox: {
-    paddingVertical: 10,
+  timeBadge: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   timeText: {
-    fontSize: 14,
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 14,
   },
   infoContainer: {
     flex: 1,
-    marginLeft: 27,
-    justifyContent: 'center',
+    marginLeft: 12,
+    marginRight: 8,
   },
-  nomeText: {
-    fontSize: 15,
+  nameText: {
     fontWeight: 'bold',
-    marginBottom: 2,
+    fontSize: 14,
   },
-  enderecoText: {
+  addressText: {
     fontSize: 12,
+    marginTop: 2,
   },
-  statusTag: {
-    backgroundColor: '#e0e7ff', // Azul claro
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+  statusBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 6,
-    marginBottom: 20,
   },
   statusText: {
     color: '#2563EB',
