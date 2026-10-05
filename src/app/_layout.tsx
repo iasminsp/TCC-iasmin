@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import 'react-native-reanimated';
-
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as SystemUI from 'expo-system-ui';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -20,6 +20,21 @@ export default function RootLayout() {
 
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    async function configureSystemUI() {
+      if (Platform.OS === 'android') {
+        try {
+          // Define a cor de fundo do container nativo como transparente
+          await SystemUI.setBackgroundColorAsync('transparent');
+        } catch (error) {
+          console.log('Erro ao configurar SystemUI:', error);
+        }
+      }
+    }
+
+    configureSystemUI();
+  }, []);
 
   // Escuta o estado da autenticação no Firebase
   useEffect(() => {
@@ -103,6 +118,28 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: 'Evolução SOAP',
+            headerTitleAlign: 'center',         
+            headerStyle: { backgroundColor: '#2563EB' },
+            headerTintColor: '#FFFFFF',         
+            headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
+          }} 
+        />
+        <Stack.Screen 
+          name="cadastroDomiciliar" 
+          options={{  
+            headerShown: true,
+            title: 'Cadastro Domiciliar',
+            headerTitleAlign: 'center',         
+            headerStyle: { backgroundColor: '#2563EB' },
+            headerTintColor: '#FFFFFF',         
+            headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
+          }} 
+        />
+        <Stack.Screen 
+          name="historicoDocumentos" 
+          options={{  
+            headerShown: true,
+            title: 'Histórico de Documentos',
             headerTitleAlign: 'center',         
             headerStyle: { backgroundColor: '#2563EB' },
             headerTintColor: '#FFFFFF',         

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, useColorScheme, ScrollView, ActivityIndicator, Modal, TextInput, Button, Alert } from 'react-native';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { StyleSheet, Text, View, useColorScheme, ScrollView, ActivityIndicator } from 'react-native';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../config/firebaseConfig'; 
 import Headerhome from '@/src/components/Headerhome';
 import { AgendaCard } from '@/src/components/CardAgenda';
 import { AcessosCard } from '@/src/components/Acessos';
+import { useRouter } from 'expo-router';
 
 interface Visita {
   id: string;
@@ -16,144 +17,132 @@ interface Visita {
   status: string;
 }
 
-type BaseModalProps = {
-  visible: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-};
-
-function BaseModal({ visible, onClose, title, children }: BaseModalProps) {
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{title}</Text>
-          {children}
-          <Button title="Cancelar" color="#ef4444" onPress={onClose} />
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 export default function HomeScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const backgroundColor = colorScheme === 'dark' ? '#151718' : '#fff';
-  const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';  
+  const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';   
   
   const [visitasHoje, setVisitasHoje] = useState<Visita[]>([]);
   const [loading, setLoading] = useState(true);
   const [visitaSelecionada, setVisitaSelecionada] = useState<Visita | null>(null);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
 
-  //Estados do Modal de Novo Paciente
-  const [pacienteModalVisible, setPacienteModalVisible] = useState(false);
-  const [nomePaciente, setNomePaciente] = useState('');
-  const [condicao, setCondicao] = useState('');
-  const [idade, setIdade] = useState('');
-  const [salvandoPaciente, setSalvandoPaciente] = useState(false);
+  // Estados dos contadores dos Cards
+  const [totalPacientes, setTotalPacientes] = useState<number>(0);
+  const [atendimentosMes, setAtendimentosMes] = useState<number>(0);
 
   // Pega a data de HOJE no formato YYYY-MM-DD
   const hojeKey = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
-  const user = auth.currentUser;
-  if (!user) return;
+    const user = auth.currentUser;
+    if (!user) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  const q = query(
-    collection(db, 'visitas'),
-    where('data', '==', hojeKey),
-    where('userId', '==', user.uid) // Filtra pelo médico logado
-  );
+    // 1. Escuta visitas de HOJE no Firestore
+    const qVisitas = query(
+      collection(db, 'visitas'),
+      where('data', '==', hojeKey),
+      where('userId', '==', user.uid)
+    );
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const docs: Visita[] = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      pacienteNome: doc.data().pacienteNome,
-      motivo: doc.data().motivo,
-      horario: doc.data().horario,
-      endereco: doc.data().endereco,
-      data: doc.data().data,
-      status: doc.data().status || 'Agendado',
-    }));
+    const unsubscribeVisitas = onSnapshot(qVisitas, (snapshot) => {
+      const docs: Visita[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        pacienteNome: doc.data().pacienteNome,
+        motivo: doc.data().motivo,
+        horario: doc.data().horario,
+        endereco: doc.data().endereco,
+        data: doc.data().data,
+        status: doc.data().status || 'Agendado',
+      }));
 
-    docs.sort((a, b) => a.horario.localeCompare(b.horario));
+      docs.sort((a, b) => a.horario.localeCompare(b.horario));
 
-    setVisitasHoje(docs);
-    setLoading(false);
-  }, (error) => {
-    console.error('Erro ao buscar visitas de hoje:', error);
-    setLoading(false);
-  });
+      setVisitasHoje(docs);
+      setLoading(false);
+    }, (error) => {
+      console.error('Erro ao buscar visitas de hoje:', error);
+      setLoading(false);
+    });
 
-  return () => unsubscribe();
-}, [hojeKey]);
+    // 2. Escuta o Total de Pacientes na carteira
+    const unsubscribePacientes = onSnapshot(collection(db, 'pacientes'), (snapshot) => {
+      setTotalPacientes(snapshot.size);
+    });
 
-// Função para cadastrar o paciente global no Firestore
-  const handleSalvarPaciente = async () => {
-    if (!nomePaciente.trim()) {
-      Alert.alert('Atenção', 'Informe ao menos o nome do paciente.');
-      return;
-    }
+    // 3. Escuta Total de Atendimentos do MÊS ATUAL
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
 
-    setSalvandoPaciente(true);
-    try {
-      await addDoc(collection(db, 'pacientes'), {
-        nome: nomePaciente.trim(),
-        condicao: condicao.trim() || 'Estável',
-        idade: idade.trim() || 'Não informada',
-        createdAt: serverTimestamp(),
-      });
+    const qAtendimentos = query(
+      collection(db, 'atendimentos'),
+      where('createdAt', '>=', inicioMes)
+    );
 
-      // Limpa formulário e fecha modal
-      setNomePaciente('');
-      setCondicao('');
-      setIdade('');
-      setPacienteModalVisible(false);
-      Alert.alert('Sucesso', 'Paciente cadastrado com sucesso!');
-    } catch (error: any) {
-      console.error('Erro ao salvar paciente:', error);
-      Alert.alert('Erro', 'Não foi possível cadastrar o paciente.');
-    } finally {
-      setSalvandoPaciente(false);
-    }
-  };
+    const unsubscribeAtendimentos = onSnapshot(qAtendimentos, (snapshot) => {
+      setAtendimentosMes(snapshot.size);
+    }, (error) => {
+      console.error('Erro ao contar atendimentos do mês:', error);
+    });
+
+    return () => {
+      unsubscribeVisitas();
+      unsubscribePacientes();
+      unsubscribeAtendimentos();
+    };
+  }, [hojeKey]);
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View>
-        <Headerhome title="Ola dr." />
+        <Headerhome title="Olá Dra. iasmin" />
       </View>
-      <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}> Acessos rapidos</Text>
+
+      <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}>
+        Acessos rápidos
+      </Text>
+
+      {/* CARDS DE ACESSO RÁPIDO */}
       <View style={styles.gridContainer}>
+        {/* CARD 1: VISITAS AGENDADAS HOJE (AZUL) */}
         <AcessosCard 
           iconFamily="FontAwesome5" 
           iconName="address-book" 
           iconColor="#357eec" 
           iconSize={30}
-          title={`Visitas agendadas hoje: ${visitasHoje.length}`} 
+          title={`Agendamentos do dia: ${visitasHoje.length}`} 
           onPress={() => {}} 
         />
-        <AcessosCard 
-          iconFamily="MaterialCommunityIcons" 
-          iconName="file-document-alert-outline" 
-          iconColor="#f69606" 
-          iconSize={30}
-          title="Evoluçoes pendentes" 
-          onPress={() => {}} 
-        />
+
+        {/* CARD 2: PACIENTES ATIVOS (VERDE) */}
         <AcessosCard 
           iconFamily="MaterialIcons" 
-          iconName="person-add-alt" 
+          iconName="people" 
           iconColor="#0f9d58" 
           iconSize={30}
-          title="Pacientes novos" 
-          onPress={() => setPacienteModalVisible(true)}/>
+          title={`Pacientes Ativos: ${totalPacientes}`} 
+          onPress={() => router.push('/pacientes' as any)} 
+        />
+
+        {/* CARD 3: ATENDIMENTOS NO MÊS (ROXO/AZUL ESCURO) */}
+        <AcessosCard 
+          iconFamily="MaterialCommunityIcons" 
+          iconName="file-document-check-outline" 
+          iconColor="#ff8503" 
+          iconSize={30}
+          title={`Atendimentos no Mês: ${atendimentosMes}`} 
+          onPress={() => {}} 
+        />
       </View>
-       <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}> Agendamentos do dia</Text>
+
+      <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}> 
+        Agendamentos do dia
+      </Text>
+
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>
         {loading ? (
           <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 20 }} />
@@ -179,41 +168,6 @@ export default function HomeScreen() {
           ))
         )}
       </ScrollView>
-      <BaseModal
-        visible={pacienteModalVisible}
-        onClose={() => setPacienteModalVisible(false)}
-        title="Cadastrar Paciente"
-      >
-        <TextInput
-          placeholder="Nome do paciente *"
-          placeholderTextColor="#9ca3af"
-          value={nomePaciente}
-          onChangeText={setNomePaciente}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Condição / Diagnóstico (ex: Estável)"
-          placeholderTextColor="#9ca3af"
-          value={condicao}
-          onChangeText={setCondicao}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Idade (ex: 68)"
-          placeholderTextColor="#9ca3af"
-          keyboardType="numeric"
-          value={idade}
-          onChangeText={setIdade}
-          style={styles.input}
-        />
-
-        <Button 
-          title={salvandoPaciente ? "Salvando..." : "Salvar Paciente"} 
-          color="#0f9d58" 
-          disabled={salvandoPaciente}
-          onPress={handleSalvarPaciente} 
-        />
-      </BaseModal>
     </View>
   );
 }
@@ -239,27 +193,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: '#6b7280',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    padding: 20,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
   },
 });

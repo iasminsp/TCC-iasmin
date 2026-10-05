@@ -1,22 +1,26 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View, useColorScheme } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface CheckboxOptionProps {
   label: string;
   checked: boolean;
   onPress: () => void;
-  textColor?: string;
+  textColor?: string; // Propriedade opcional para controlar a cor no modo escuro
 }
 
 export function CheckboxOption({ label, checked, onPress, textColor }: CheckboxOptionProps) {
+  const colorScheme = useColorScheme();
+  const defaultTextColor = colorScheme === 'dark' ? '#F2F3F4' : '#11181C';
+  const labelColor = textColor || defaultTextColor;
+
   return (
-    <Pressable style={styles.container} onPress={onPress}>
-      <View style={[styles.box, checked && styles.boxChecked]}>
-        {checked && <Ionicons name="checkmark" size={14} color="#ffffff" />}
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+        {checked && <Ionicons name="checkmark" size={16} color="#FFF" />}
       </View>
-      <Text style={[styles.label, { color: textColor }]}>{label}</Text> 
-    </Pressable>
+      <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -24,25 +28,24 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    marginVertical: 6,
   },
-  box: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+  checkbox: {
+    width: 22,
+    height: 22,
     borderWidth: 1.5,
-    borderColor: '#8E8E93',
+    borderColor: '#0055A5',
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
-    backgroundColor: 'transparent',
   },
-  boxChecked: {
-    backgroundColor: '#2F80ED',
-    borderColor: '#2F80ED',
+  checkboxChecked: {
+    backgroundColor: '#0055A5',
   },
   label: {
     fontSize: 14,
-    color: '#E0E0E0', // Adapte para a cor do seu tema
+    fontWeight: '500',
+    flex: 1,
   },
 });

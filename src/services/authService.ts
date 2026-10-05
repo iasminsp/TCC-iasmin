@@ -12,12 +12,15 @@ interface RegisterData {
   nome: string;
   cpfOrEmail: string;
   senha: string;
-  cargo: string;
+  cbo: {
+    codigo: string;
+    descricao: string;
+  };
   equipe: string;
   turno: string;
 }
-
-export const registerUser = async ({ nome, cpfOrEmail, senha, cargo, equipe, turno }: RegisterData) => {
+export const registerUser = async (data: RegisterData) => {
+  const { nome, cpfOrEmail, senha, cbo, equipe, turno } = data;
   const isEmail = cpfOrEmail.includes('@');
   const email = isEmail ? cpfOrEmail.trim() : '';
   const rawCpf = isEmail ? '' : cleanCPF(cpfOrEmail);
@@ -43,7 +46,7 @@ export const registerUser = async ({ nome, cpfOrEmail, senha, cargo, equipe, tur
     nome,
     cpf: rawCpf,
     email,
-    cargo,
+    cbo,
     unidade: 'Melhor em Casa - SAD',
     equipe,
     turno,

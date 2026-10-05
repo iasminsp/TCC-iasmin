@@ -11,9 +11,9 @@ import { ConfigCard } from '@/src/components/CardConfig';
 interface MedicoProfile {
   nome: string;
   cargo: string;
+  municipio: string;
   unidade: string;
   equipe: string;
-  turno: string;
 }
 
 export default function PerfilScreen() {
@@ -35,10 +35,10 @@ export default function PerfilScreen() {
           const data = docSnap.data();
           setPerfil({
             nome: data.nome || 'Não informado',
-            cargo: data.cargo || 'Não informado',
+            cargo: data.cargo || data.cbo?.descricao || 'Não informado',
+            municipio: 'Patos de Minas - MG',
             unidade: data.unidade || 'Melhor em Casa - SAD',
             equipe: data.equipe || 'Não informada',
-            turno: data.turno || 'Não informado',
           });
         }
         setLoading(false);
@@ -89,10 +89,10 @@ export default function PerfilScreen() {
         ) : (
           <>
             <ConfigCard title={`Nome: ${perfil?.nome || 'Dr. Médico'}`} onPress={() => {}} /> 
-            <ConfigCard title={`Cargo/Função: ${perfil?.cargo || 'Não informado'}`} onPress={() => {}} />  
+            <ConfigCard title={`CBO/Ocupação: ${perfil?.cargo || 'Não informado'}`} onPress={() => {}} /> 
+            <ConfigCard title={`Município: ${perfil?.municipio || 'Patos de Minas - MG'}`} onPress={() => {}} /> 
             <ConfigCard title={`Unidade: ${perfil?.unidade || 'Melhor em Casa - SAD'}`} onPress={() => {}} /> 
             <ConfigCard title={`Equipe: ${perfil?.equipe || 'Não informada'}`} onPress={() => {}} />
-            <ConfigCard title={`Turno: ${perfil?.turno || 'Não informado'}`} onPress={() => {}}/>
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={22} color="#ffffff" style={{ marginRight: 8 }} />

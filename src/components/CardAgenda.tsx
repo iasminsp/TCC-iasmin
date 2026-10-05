@@ -24,6 +24,7 @@ export function AgendaCard({
   const cardBackgroundColor = colorScheme === 'dark' ? '#2A2D32' : '#f3f4f6';
   const nameTextColor = colorScheme === 'dark' ? '#ffffff' : '#11181C';
   const addressTextColor = colorScheme === 'dark' ? '#9CA3AF' : '#6b7280';
+  
 
   return (
     <TouchableOpacity 
@@ -80,9 +81,10 @@ const styles = StyleSheet.create({
   nameText: {
     fontWeight: 'bold',
     fontSize: 14,
+    textAlign: 'center',
   },
   addressText: {
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 2,
   },
   statusBadge: {

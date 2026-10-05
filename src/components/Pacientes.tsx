@@ -7,11 +7,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 interface PacientesProps {
   nome: string;
   condicao: string;
-  idade: string;
+  DN: string;
   onPress?: () => void;
 }
 
-export function PacientesCard({ nome, condicao, idade, onPress}: PacientesProps) {
+export function PacientesCard({ nome, condicao, DN, onPress}: PacientesProps) {
   const colorScheme = useColorScheme();
     const backgroundColor = colorScheme === 'dark' ? '#3b3f41' : '#fff';
     const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
@@ -39,7 +39,7 @@ export function PacientesCard({ nome, condicao, idade, onPress}: PacientesProps)
           </Text>
           <Text style={{ fontSize: 12, color: textColor, marginHorizontal: 6 }}>•</Text>
           <Text style={[styles.idadeText, { color: textColor }]}>
-            {idade}
+            {DN}
           </Text>
         </View>
       </View>

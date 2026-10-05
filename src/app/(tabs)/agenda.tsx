@@ -16,14 +16,16 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { collection, addDoc, onSnapshot, query, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'expo-router'; 
-import { db, auth} from '../../config/firebaseConfig'; 
+import { db, auth } from '../../config/firebaseConfig'; 
 import Header from '../../components/Header';
 import { AgendaCard } from '../../components/CardAgenda';
 import { AddCard } from '../../components/Add';
 
+// Adicionado o campo endereco opcional na interface do paciente
 interface Paciente {
   id: string;
   nome: string;
+  endereco?: string;
 }
 
 interface Visita {
@@ -89,12 +91,13 @@ export default function AgendaScreen() {
   const formattedDateKey = date.toISOString().split('T')[0];
   const formattedDateBR = date.toLocaleDateString('pt-BR');
 
-  // 1. Busca todos os pacientes do Firestore
+  // 1. Busca os pacientes do Firestore trazendo também o 'endereco' cadastrado
   useEffect(() => {
     const unsubPacientes = onSnapshot(collection(db, 'pacientes'), (snapshot) => {
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         nome: doc.data().nome,
+        endereco: doc.data().endereco || '', // Puxa o endereço cadastrado do paciente
       }));
       setListaPacientes(docs);
     });
@@ -105,16 +108,15 @@ export default function AgendaScreen() {
   // 2. Busca as visitas filtradas pela data selecionada
   useEffect(() => {
     const user = auth.currentUser;
-  if (!user) return;
+    if (!user) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  // Consulta que traz APENAS as visitas da data selecionada E pertencentes ao médico logado
-  const q = query(
-    collection(db, 'visitas'),
-    where('data', '==', formattedDateKey),
-    where('userId', '==', user.uid)
-  );
+    const q = query(
+      collection(db, 'visitas'),
+      where('data', '==', formattedDateKey),
+      where('userId', '==', user.uid)
+    );
     const unsubVisitas = onSnapshot(q, (snapshot) => {
       const docs: Visita[] = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -137,22 +139,20 @@ export default function AgendaScreen() {
     return () => unsubVisitas();
   }, [formattedDateKey]);
 
-
   const onChangeTime = (event: any, selectedTime?: Date) => {
-  setShowTimePicker(false);
-  if (selectedTime) {
-    setHoraDate(selectedTime);
-    // Formata para HH:MM automático
-    const horas = selectedTime.getHours().toString().padStart(2, '0');
-    const minutos = selectedTime.getMinutes().toString().padStart(2, '0');
-    setHorario(`${horas}:${minutos}`);
-  }
-};
+    setShowTimePicker(false);
+    if (selectedTime) {
+      setHoraDate(selectedTime);
+      const horas = selectedTime.getHours().toString().padStart(2, '0');
+      const minutos = selectedTime.getMinutes().toString().padStart(2, '0');
+      setHorario(`${horas}:${minutos}`);
+    }
+  };
 
   // Função para filtrar a lista ao digitar
   const handleDigitarPaciente = (texto: string) => {
     setBuscaPaciente(texto);
-    setPacienteSelecionado(null); // Limpa seleção anterior se continuar digitando
+    setPacienteSelecionado(null);
 
     if (texto.trim() === '') {
       setPacientesFiltrados([]);
@@ -164,46 +164,50 @@ export default function AgendaScreen() {
     }
   };
 
-  // Função para selecionar um paciente da lista
+  // AQUI: Ao selecionar o paciente, o endereço dele já entra direto no input de endereço
   const handleSelecionarPaciente = (p: Paciente) => {
     setPacienteSelecionado(p);
     setBuscaPaciente(p.nome);
+    if (p.endereco) {
+      setEndereco(p.endereco); // Preenche o campo de endereço automaticamente
+    }
     setPacientesFiltrados([]); // Esconde a lista de sugestões
   };
 
   const handleSalvarVisita = async () => {
     const user = auth.currentUser;
-  if (!user) {
-    Alert.alert('Erro', 'Você precisa estar logado para agendar uma visita.');
-    return;
-  }
+    if (!user) {
+      Alert.alert('Erro', 'Você precisa estar logado para agendar uma visita.');
+      return;
+    }
 
-  const nomeFinal = pacienteSelecionado ? pacienteSelecionado.nome : buscaPaciente;
-  if (!nomeFinal.trim() || !horario.trim()) return;
+    const nomeFinal = pacienteSelecionado ? pacienteSelecionado.nome : buscaPaciente;
+    if (!nomeFinal.trim() || !horario.trim()) return;
 
-  try {
-    await addDoc(collection(db, 'visitas'), {
-      userId: user.uid, // VINCULA A VISITA AO MÉDICO LOGADO
-      pacienteNome: nomeFinal,
-      motivo: motivo.trim(),
-      horario: horario.trim(),
-      endereco: endereco.trim() || 'Endereço não informado',
-      data: formattedDateKey,
-      createdAt: serverTimestamp(),
-    });
+    try {
+      await addDoc(collection(db, 'visitas'), {
+        userId: user.uid,
+        pacienteNome: nomeFinal,
+        motivo: motivo.trim(),
+        horario: horario.trim(),
+        endereco: endereco.trim() || 'Endereço não informado',
+        data: formattedDateKey,
+        createdAt: serverTimestamp(),
+      });
 
-    // Limpa os campos
-    setBuscaPaciente('');
-    setPacienteSelecionado(null);
-    setPacientesFiltrados([]);
-    setMotivo('');
-    setHorario('');
-    setEndereco('');
-    setModalVisible(false);
-  } catch (error) {
-    console.error('Erro ao salvar visita:', error);
-  }
-};
+      // Limpa os campos
+      setBuscaPaciente('');
+      setPacienteSelecionado(null);
+      setPacientesFiltrados([]);
+      setMotivo('');
+      setHorario('');
+      setEndereco('');
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Erro ao salvar visita:', error);
+    }
+  };
+
   const handleAtualizarStatus = async (novoStatus: string) => {
     if (!visitaSelecionada) return;
 
@@ -234,17 +238,6 @@ export default function AgendaScreen() {
   const onChangeDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowPicker(false);
     if (selectedDate) setDate(selectedDate);
-  };
-
-  const handleAbrirPerfilPaciente = (visita: Visita) => {
-    router.push({
-      pathname: '/perfilPacientes', // Altere para a rota correta da sua estrutura se necessário
-      params: {
-        nome: visita.pacienteNome,
-        condicao: visita.motivo || 'Atendimento agendado',
-        idade: 'Não informada',
-      },
-    });
   };
 
   return (
@@ -286,8 +279,6 @@ export default function AgendaScreen() {
               nome={visita.motivo ? `${visita.pacienteNome} • ${visita.motivo}` : visita.pacienteNome}
               endereco={visita.endereco}
               status={visita.status}
-              onPress={() => handleAbrirPerfilPaciente(visita)}
-              // Ao clicar na TAG/BADGE de status -> Abre o Modal de Alteração
               onStatusPress={() => {
                 setVisitaSelecionada(visita);
                 setStatusModalVisible(true);
@@ -328,7 +319,7 @@ export default function AgendaScreen() {
             style={styles.input}
           />
 
-          {/* Lista de sugestões dinâmicas conforme a digitação */}
+          {/* Sugestões de pacientes durante a pesquisa */}
           {pacientesFiltrados.length > 0 && (
             <View style={styles.suggestionsContainer}>
               <ScrollView nestedScrollEnabled style={{ maxHeight: 120 }}>
@@ -339,6 +330,9 @@ export default function AgendaScreen() {
                     onPress={() => handleSelecionarPaciente(item)}
                   >
                     <Text style={styles.suggestionText}>{item.nome}</Text>
+                    {item.endereco ? (
+                      <Text style={styles.suggestionSubText}>{item.endereco}</Text>
+                    ) : null}
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -351,8 +345,8 @@ export default function AgendaScreen() {
           onPress={() => setShowTimePicker(true)}
           style={styles.inputClickable}
         >
-        <Text style={[styles.inputClickableText, { color: horario ? '#6b7280af' : '#6b7280' }]}>            
-          {horario ? `Horário: ${horario}` : 'Selecione o horário...'}
+          <Text style={[styles.inputClickableText, { color: horario ? '#1f2937' : '#6b7280' }]}>            
+            {horario ? `Horário: ${horario}` : 'Selecione o horário...'}
           </Text>
         </TouchableOpacity>
 
@@ -383,6 +377,7 @@ export default function AgendaScreen() {
         <Button title="Salvar Visita" color="#2563EB" onPress={handleSalvarVisita} />
       </BaseModal>
 
+      {/* Modal de Status */}
       <Modal visible={statusModalVisible} transparent animationType="fade" onRequestClose={() => setStatusModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -458,7 +453,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
   },
-
   inputClickable: {
     borderWidth: 1,
     borderColor: '#b8a9a995',
@@ -468,7 +462,7 @@ const styles = StyleSheet.create({
   },
   inputClickableText: {
     fontSize: 14,
-   },
+  },
   suggestionsContainer: {
     borderWidth: 1,
     borderColor: '#2563EB',
@@ -484,7 +478,13 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#1f2937',
+  },
+  suggestionSubText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
   },
   statusOptionButton: {
     padding: 12,

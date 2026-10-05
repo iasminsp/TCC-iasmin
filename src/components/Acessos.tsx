@@ -90,13 +90,14 @@ const styles = StyleSheet.create({
   infoContainer: {
     flex: 1,
     alignItems: 'center',
-    marginLeft: 27,
+    width: '100%',
     justifyContent: 'center',
   },
   titleText: {
     fontSize: 15,
     fontWeight: 'bold',
     marginBottom: 0,
+    textAlign: 'center',
   },
  
 });
