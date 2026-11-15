@@ -75,16 +75,13 @@ export default function CadastroDomiciliar() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // State unificado do formulário
   const [formData, setFormData] = useState({
-    // Paciente
     pacienteNome: params.nome || '',
     dataNascimento: params.DN || '',
     numCartaoSus: '',
     sexo: '',
     telefone: '',
 
-    // Endereço
     municipio: 'Patos de Minas',
     bairro: '',
     logradouro: params.endereco || '',
@@ -94,14 +91,11 @@ export default function CadastroDomiciliar() {
     pontoReferencia: '',
     cep: '',
 
-    // Tipo de Imóvel
     tipoImovel: 'Domicílio',
 
-    // Telefones
     telefoneResidencial: '',
     telefoneContato: '',
 
-    // Condições de Moradia
     situacaoMoradia: '',
     localizacao: '',
     tipoDomicilio: '',
@@ -109,7 +103,7 @@ export default function CadastroDomiciliar() {
     posseTerra: '',
   });
 
-  // Função para buscar dados do CEP via ViaCEP
+  // Função para buscar dados do CEP
   const handleCepChange = async (cepValue: string) => {
     handleChange('cep', cepValue);
 
@@ -144,7 +138,7 @@ export default function CadastroDomiciliar() {
       try {
         setLoadingPaciente(true);
 
-        // SE VEIO DO HISTÓRICO: Carrega o cadastro salvo diretamente da coleção principal 'atendimentos'
+        // SE VEIO DO HISTÓRICO: Carrega o cadastro salvo 
         if (params.atendimentoId) {
           const docRef = doc(db, 'atendimentos', params.atendimentoId);
           const docSnap = await getDoc(docRef);
@@ -158,7 +152,6 @@ export default function CadastroDomiciliar() {
           return;
         }
 
-        // SE FOR NOVO CADASTRO: Busca dados básicos do paciente
         if (params.id) {
           const pacienteDocRef = doc(db, 'pacientes', params.id);
           const pacienteSnap = await getDoc(pacienteDocRef);
@@ -186,7 +179,7 @@ export default function CadastroDomiciliar() {
               cep: data.cep || prev.cep,
             }));
 
-            // Se já possuir CEP no Firestore, busca as informações do logradouro/bairro
+
             if (data.cep && data.cep.replace(/\D/g, '').length === 8) {
               const cleanCep = data.cep.replace(/\D/g, '');
               try {
@@ -242,7 +235,6 @@ export default function CadastroDomiciliar() {
         enderecoFormatado += `, ${formData.municipio}`;
       }
 
-      // 1. Atualiza os dados do paciente no cadastro principal (usado no Perfil)
       const pacienteRef = doc(db, 'pacientes', params.id);
       await updateDoc(pacienteRef, {
         nome: formData.pacienteNome,
@@ -288,7 +280,6 @@ export default function CadastroDomiciliar() {
     <View style={[styles.container, { backgroundColor }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
-        {/* PACIENTE */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>PACIENTE</Text>
         </View>
@@ -361,7 +352,6 @@ export default function CadastroDomiciliar() {
           )}
         </View>
 
-        {/* ENDEREÇO / LOCAL DE PERMANÊNCIA */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>ENDEREÇO / LOCAL DE PERMANÊNCIA</Text>
         </View>
@@ -463,7 +453,6 @@ export default function CadastroDomiciliar() {
           </View>
         </View>
 
-        {/* TIPO DO IMÓVEL */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>TIPO DO IMÓVEL</Text>
         </View>
@@ -478,7 +467,6 @@ export default function CadastroDomiciliar() {
           />
         </View>
 
-        {/* TELEFONES PARA CONTATO */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>TELEFONES PARA CONTATO</Text>
         </View>
@@ -509,13 +497,12 @@ export default function CadastroDomiciliar() {
           </View>
         </View>
 
-        {/* CONDIÇÕES DE MORADIA */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>CONDIÇÕES DE MORADIA</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           
-          {/* Situação de Moradia */}
+
           <Text style={[styles.groupTitle, { color: textColor }]}>Situação de Moradia / Posse da Terra</Text>
           <View style={styles.optionsContainer}>
             {SITUACAO_MORADIA_OPCOES.map((item) => (
@@ -540,7 +527,6 @@ export default function CadastroDomiciliar() {
             ))}
           </View>
 
-          {/* Localização */}
           <Text style={[styles.groupTitle, { color: textColor, marginTop: 16 }]}>Localização</Text>
           <View style={styles.optionsContainer}>
             {LOCALIZACAO_OPCOES.map((item) => (
@@ -565,7 +551,6 @@ export default function CadastroDomiciliar() {
             ))}
           </View>
 
-          {/* Tipo do Domicílio */}
           <Text style={[styles.groupTitle, { color: textColor, marginTop: 16 }]}>Tipo do Domicílio</Text>
           <View style={styles.optionsContainer}>
             {TIPO_DOMICILIO_OPCOES.map((item) => (
@@ -590,7 +575,6 @@ export default function CadastroDomiciliar() {
             ))}
           </View>
 
-          {/* Número de Cômodos */}
           <View style={[styles.inputGroup, { marginTop: 16 }]}>
             <Text style={[styles.label, { color: textColor }]}>Número de Cômodos</Text>
             <TextInput
@@ -603,7 +587,6 @@ export default function CadastroDomiciliar() {
             />
           </View>
 
-          {/* Condição de Posse e Uso da Terra */}
           <Text style={[styles.groupTitle, { color: textColor, marginTop: 16 }]}>
             Condição de Posse e Uso da Terra
           </Text>
@@ -632,7 +615,6 @@ export default function CadastroDomiciliar() {
 
         </View>
 
-        {/* BOTÃO SALVAR */}
         <TouchableOpacity
           style={[styles.saveButton, saving && { opacity: 0.7 }]}
           onPress={handleSave}

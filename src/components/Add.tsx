@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: '100%',
     height: 48,
-    // Sombra
+    
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

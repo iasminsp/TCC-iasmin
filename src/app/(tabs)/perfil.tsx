@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, useColorScheme, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  useColorScheme, 
+  ActivityIndicator, 
+  ScrollView, 
+  TouchableOpacity, 
+  Alert,
+  Platform 
+} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig';
@@ -29,7 +39,6 @@ export default function PerfilScreen() {
     const user = auth.currentUser;
 
     if (user) {
-      // Procura na coleção 'users' criada pelo teu authService
       const unsub = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -53,7 +62,23 @@ export default function PerfilScreen() {
     }
   }, []);
 
+  const executeLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/(auth)'); 
+    } catch (error: any) {
+      Alert.alert('Erro ao sair', error.message);
+    }
+  };
+
   const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Tem certeza que deseja encerrar a sua sessão?')) {
+        executeLogout();
+      }
+      return;
+    }
+
     Alert.alert(
       'Sair do App',
       'Tem certeza que deseja encerrar a sua sessão?',
@@ -62,14 +87,7 @@ export default function PerfilScreen() {
         { 
           text: 'Sair', 
           style: 'destructive', 
-          onPress: async () => {
-            try {
-              await signOut(auth);
-              router.replace('/'); // Redireciona para a tela de login
-            } catch (error: any) {
-              Alert.alert('Erro ao sair', error.message);
-            }
-          } 
+          onPress: executeLogout,
         },
       ]
     );
@@ -100,7 +118,6 @@ export default function PerfilScreen() {
             </TouchableOpacity>
           </>
         )}
-        
       </ScrollView>
     </View>
   );

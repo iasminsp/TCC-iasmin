@@ -6,7 +6,7 @@ interface CheckboxOptionProps {
   label: string;
   checked: boolean;
   onPress: () => void;
-  textColor?: string; // Propriedade opcional para controlar a cor no modo escuro
+  textColor?: string; 
 }
 
 export function CheckboxOption({ label, checked, onPress, textColor }: CheckboxOptionProps) {

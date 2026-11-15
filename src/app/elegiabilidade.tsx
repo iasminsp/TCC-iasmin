@@ -1,49 +1,14 @@
-import { CheckboxOption } from '@/src/components/Checkbox';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from 'react-native';
 import { auth, db } from '../config/firebaseConfig';
+import { CheckboxOption } from '@/src/components/Checkbox';
+import { Seletor } from '@/src/components/Seletor';
+import { CID10_SAD_OPCOES } from '@/src/data/cidData';
+import { CONDICOES_OPCOES, CUIDADOR_GRAU_OPCOES, MODALIDADE_AD_OPCOES, PROCEDENCIA_OPCOES } from '@/src/data/elegibilidadeData';
 
-const CONDICOES_OPCOES = [
-  { id: 'acamado', label: 'Acamado' },
-  { id: 'domiciliado', label: 'Domiciliado' },
-  { id: 'ulceras', label: 'Úlceras / Feridas (grau III ou IV)' },
-  { id: 'nutricional', label: 'Acompanhamento nutricional' },
-  { id: 'sng', label: 'Uso de sonda naso-gástrica - SNG' },
-  { id: 'sne', label: 'Uso de sonda naso-enteral - SNE' },
-  { id: 'gastrostomia', label: 'Uso de gastrostomia' },
-  { id: 'colostomia', label: 'Uso de colostomia' },
-  { id: 'cistostomia', label: 'Uso de cistostomia' },
-  { id: 'svd', label: 'Uso de sonda vesical de demora - SVD' },
-  { id: 'pre_operatorio', label: 'Acompanhamento pré-operatório' },
-  { id: 'pos_operatorio', label: 'Acompanhamento pós-operatório' },
-  { id: 'ortese_protese', label: 'Adaptação ao uso de órtese / prótese' },
-  { id: 'reabilitacao_domiciliar', label: 'Reabilitação domiciliar' },
-  { id: 'paliativos_oncologico', label: 'Cuidados paliativos oncológico' },
-  { id: 'paliativos_nao_oncologico', label: 'Cuidados paliativos não-oncológico' },
-  { id: 'oxigenoterapia', label: 'Oxigenoterapia domiciliar' },
-  { id: 'traqueostomia', label: 'Uso de traqueostomia' },
-  { id: 'aspirador_vias_aereas', label: 'Uso de aspirador de vias aéreas para higiene brônquica' },
-  { id: 'ventilatorio_cpap', label: 'Suporte ventilatório não invasivo, CPAP' },
-  { id: 'ventilatorio_bipap', label: 'Suporte ventilatório não invasivo, BiPAP' },
-  { id: 'dialise_peritoneal', label: 'Diálise peritoneal' },
-  { id: 'paracentese', label: 'Paracentese' },
-  { id: 'medicacao_parenteral', label: 'Medicação parenteral' },
-];
-
-// Função utilitária para gerar código de ficha único (ex: ADM-20261004-8492)
 const gerarCodigoFicha = () => {
   const now = new Date();
   const dataStr = now.toISOString().slice(0, 10).replace(/-/g, '');
@@ -71,16 +36,13 @@ export default function Elegibilidade() {
 
   const [loadingUserData, setLoadingUserData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  // State unificado do formulário
   const [formData, setFormData] = useState({
-    // Dados da ficha
     codigoFicha: gerarCodigoFicha(),
     uuid: '',
     data: '',
     turno: 'Manhã',
-
-    // Profissional
     municipio: 'Patos de Minas',
     cbo: '',
     codigoIne: '',
@@ -88,20 +50,15 @@ export default function Elegibilidade() {
     unidade: 'Melhor em Casa - SAD',
     cnsProfissional: '',
     profissional: '',
-
-    // Paciente
     pacienteNome: params.nome || '',
     dataNascimento: params.DN || '',
     numCartaoSus: '',
     sexo: '',
     telefone: '',
-
-    // Procedência
     procedencia: '',
-
-    // CID & Conclusão & Cuidador
     cid: '',
     modalidadeAd: '',
+    cuidadorGrau: '',
     cuidadorNome: '',
     cnsCuidador: '',
   });
@@ -115,7 +72,7 @@ export default function Elegibilidade() {
         const now = new Date();
         const dataFormatted = now.toLocaleDateString('pt-BR');
 
-        let profissionalData: Partial<typeof formData> = { 
+        let profissionalData: Partial<typeof formData> = {
           data: dataFormatted,
         };
 
@@ -129,9 +86,7 @@ export default function Elegibilidade() {
             let cboText = '';
             if (userData.cbo) {
               if (typeof userData.cbo === 'object') {
-                cboText = `${userData.cbo.codigo || ''} ${
-                  userData.cbo.descricao ? '- ' + userData.cbo.descricao : ''
-                }`.trim();
+                cboText = `${userData.cbo.codigo || ''} ${userData.cbo.descricao ? '- ' + userData.cbo.descricao : ''}`.trim();
               } else {
                 cboText = String(userData.cbo);
               }
@@ -205,7 +160,6 @@ export default function Elegibilidade() {
 
     setSaving(true);
     try {
-      // 1. Atualiza dados do paciente
       const pacienteRef = doc(db, 'pacientes', params.id);
       await updateDoc(pacienteRef, {
         nome: formData.pacienteNome,
@@ -215,7 +169,6 @@ export default function Elegibilidade() {
         telefone: formData.telefone,
       });
 
-      // 2. Salva a ficha de Elegibilidade/Admissão na subcoleção 'atendimentos'
       await addDoc(collection(db, 'pacientes', params.id, 'atendimentos'), {
         tipo: 'Elegibilidade',
         codigoFicha: formData.codigoFicha,
@@ -226,12 +179,11 @@ export default function Elegibilidade() {
         createdAt: serverTimestamp(),
       });
 
-      Alert.alert('Sucesso', `Ficha de Admissão ${formData.codigoFicha} salva com sucesso!`, [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        router.back();
+      }, 1500);
     } catch (error) {
       console.error('Erro ao salvar Elegibilidade:', error);
       Alert.alert('Erro', 'Não foi possível salvar os dados da ficha.');
@@ -242,8 +194,14 @@ export default function Elegibilidade() {
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
+      {showToast && (
+        <View style={styles.toastContainer}>
+          <Ionicons name="checkmark-circle" size={24} color="#FFF" style={{ marginRight: 8 }} />
+          <Text style={styles.toastText}>Ficha salva com sucesso!</Text>
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
         {/* DADOS DA FICHA */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>DADOS DA FICHA</Text>
@@ -253,11 +211,14 @@ export default function Elegibilidade() {
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: textColor }]}>Código da Ficha (Gerado)</Text>
               <TextInput
-                style={[styles.input, { color: textColor, borderColor, backgroundColor: isDark ? '#2A2A2A' : '#EAEAEA' }]}
+                style={[
+                  styles.input,
+                  { color: textColor, borderColor, backgroundColor: isDark ? '#2A2A2A' : '#EAEAEA' },
+                ]}
                 placeholder="Código"
                 placeholderTextColor={placeholderColor}
                 value={formData.codigoFicha}
-                editable={false} // Mantém como leitura para não ser alterado manualmente
+                editable={false}
               />
             </View>
             <View style={styles.inputGroup}>
@@ -357,7 +318,6 @@ export default function Elegibilidade() {
           )}
         </View>
 
-        {/* PACIENTE */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>PACIENTE</Text>
         </View>
@@ -424,18 +384,17 @@ export default function Elegibilidade() {
           </View>
         </View>
 
-        {/* PROCEDÊNCIA */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>PROCEDÊNCIA</Text>
+          <Text style={styles.sectionTitle}>PROCEDÊNCIA*</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.label, { color: textColor }]}>Procedência</Text>
-          <TextInput
-            style={[styles.input, { color: textColor, borderColor }]}
-            placeholder="Selecione ou digite a procedência..."
-            placeholderTextColor={placeholderColor}
+          <Seletor
+            label="Procedência*"
             value={formData.procedencia}
-            onChangeText={(v) => handleChange('procedencia', v)}
+            options={PROCEDENCIA_OPCOES}
+            onSelect={(item) => handleChange('procedencia', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione..."
+            isDark={isDark}
           />
         </View>
 
@@ -456,31 +415,33 @@ export default function Elegibilidade() {
 
         {/* CID */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>CID</Text>
+          <Text style={styles.sectionTitle}>CID*</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.label, { color: textColor }]}>Código / Descrição do CID</Text>
-          <TextInput
-            style={[styles.input, { color: textColor, borderColor }]}
-            placeholder="Pesquisar ou inserir CID..."
-            placeholderTextColor={placeholderColor}
+          <Seletor
+            label="CID*"
             value={formData.cid}
-            onChangeText={(v) => handleChange('cid', v)}
+            options={CID10_SAD_OPCOES}
+            allowCustomText={true}
+            onCustomTextChange={(text) => handleChange('cid', text)}
+            onSelect={(item) => handleChange('cid', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione ou digite..."
+            isDark={isDark}
           />
         </View>
 
         {/* CONCLUSÃO */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>CONCLUSÃO</Text>
+          <Text style={styles.sectionTitle}>CONCLUSÃO*</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.label, { color: textColor }]}>Modalidade AD</Text>
-          <TextInput
-            style={[styles.input, { color: textColor, borderColor }]}
-            placeholder="Selecione a Modalidade AD (ex: AD1, AD2, AD3)..."
-            placeholderTextColor={placeholderColor}
+          <Seletor
+            label="Modalidade AD*"
             value={formData.modalidadeAd}
-            onChangeText={(v) => handleChange('modalidadeAd', v)}
+            options={MODALIDADE_AD_OPCOES}
+            onSelect={(item) => handleChange('modalidadeAd', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione..."
+            isDark={isDark}
           />
         </View>
 
@@ -489,6 +450,15 @@ export default function Elegibilidade() {
           <Text style={styles.sectionTitle}>CUIDADOR</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
+          <Seletor
+            label="Grau de Parentesco / Vínculo"
+            value={formData.cuidadorGrau}
+            options={CUIDADOR_GRAU_OPCOES}
+            onSelect={(item) => handleChange('cuidadorGrau', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione..."
+            isDark={isDark}
+          />
+
           <View style={styles.row}>
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: textColor }]}>Nome do Cuidador</Text>
@@ -529,7 +499,6 @@ export default function Elegibilidade() {
             </>
           )}
         </TouchableOpacity>
-
       </ScrollView>
     </View>
   );
@@ -617,5 +586,25 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  toastContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    zIndex: 9999,
+    backgroundColor: 'rgba(46, 125, 50, 0.9)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+  },
+  toastText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });

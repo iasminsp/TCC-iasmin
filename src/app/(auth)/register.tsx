@@ -7,12 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Platform,
-} from 'react-native';
+  ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -31,7 +26,6 @@ export default function RegisterScreen() {
   const [cboResults, setCboResults] = useState<CBOItem[]>([]);
   const [selectedCBO, setSelectedCBO] = useState<CBOItem | null>(null);
 
-  // Estados do formulário
   const [nome, setNome] = useState('');
   const [cpfOrEmail, setCpfOrEmail] = useState('');
   const [equipe, setEquipe] = useState('');
@@ -76,7 +70,7 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!nome || !cpfOrEmail || !selectedCBO || !equipe || !turno || !senha || !confirmarSenha) {
+    if (!nome || !cpfOrEmail || !selectedCBO || !equipe || !senha || !confirmarSenha) {
       Alert.alert('Erro', 'Preencha todos os campos.');
       return;
     }
@@ -97,7 +91,7 @@ export default function RegisterScreen() {
           descricao: selectedCBO.no_cbo,
         },
         equipe,
-        turno,
+        turno: turno || 'Integral',
       });
       Alert.alert('Sucesso', 'Conta criada com sucesso!');
       router.back();
@@ -108,6 +102,150 @@ export default function RegisterScreen() {
     }
   };
 
+  const content = (
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={styles.brandTitle}>VIVER Sistemas</Text>
+
+      <View style={styles.headerArea}>
+        <Text style={styles.headerTitle}>Crie sua</Text>
+        <Text style={styles.headerTitle}>conta!</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>Nome completo</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Dr. Nome Exemplo"
+            placeholderTextColor="#a1a1aa"
+            value={nome}
+            onChangeText={setNome}
+          />
+          <Ionicons name="checkmark" size={18} color="#a1a1aa" />
+        </View>
+
+        <Text style={styles.label}>CPF ou email p/ login</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="@gmail"
+            placeholderTextColor="#a1a1aa"
+            value={cpfOrEmail}
+            onChangeText={setCpfOrEmail}
+            autoCapitalize="none"
+          />
+          <Ionicons name="checkmark" size={18} color="#a1a1aa" />
+        </View>
+
+        {/* Busca CBO */}
+        <Text style={styles.label}>CBO / Ocupação</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite para buscar (ex: Enfermeiro, Medico)"
+            placeholderTextColor="#a1a1aa"
+            value={cboQuery}
+            onChangeText={handleSearchCBO}
+          />
+          {selectedCBO ? (
+            <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
+          ) : (
+            <Ionicons name="search" size={18} color="#a1a1aa" />
+          )}
+        </View>
+
+        {cboResults.length > 0 && (
+          <View style={styles.dropdownList}>
+            {cboResults.slice(0, 5).map((item) => (
+              <TouchableOpacity
+                key={item.co_cbo}
+                style={styles.dropdownItem}
+                onPress={() => handleSelectCBO(item)}
+              >
+                <Text style={styles.cboCode}>{item.co_cbo}</Text>
+                <Text style={styles.cboText} numberOfLines={1}>
+                  {item.no_cbo}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.label}>Equipe</Text>
+        <View style={styles.optionsGroup}>
+          {EQUIPES_OPCOES.map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[
+                styles.optionButton,
+                equipe === option && styles.optionButtonSelected,
+              ]}
+              onPress={() => setEquipe(option)}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  equipe === option && styles.optionTextSelected,
+                ]}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Senha</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••••"
+            placeholderTextColor="#a1a1aa"
+            secureTextEntry={!showPassword}
+            value={senha}
+            onChangeText={setSenha}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={18} color="#a1a1aa" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.label}>Confirmar Senha</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••••"
+            placeholderTextColor="#a1a1aa"
+            secureTextEntry={!showConfirmPassword}
+            value={confirmarSenha}
+            onChangeText={setConfirmarSenha}
+          />
+          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+            <Ionicons name={showConfirmPassword ? 'eye' : 'eye-outline'} size={18} color="#a1a1aa" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity disabled={loading} onPress={handleRegister}>
+          <LinearGradient
+            colors={['#0052cc', '#d97706']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.button}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Cadastrar</Text>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+
   return (
     <LinearGradient colors={['#1d4ed8', '#9a6010']} style={styles.container}>
       <StatusBar style="light" />
@@ -116,151 +254,13 @@ export default function RegisterScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.brandTitle}>VIVER Sistemas</Text>
-
-              <View style={styles.headerArea}>
-                <Text style={styles.headerTitle}>Crie sua</Text>
-                <Text style={styles.headerTitle}>conta!</Text>
-              </View>
-
-              <View style={styles.card}>
-                <Text style={styles.label}>Nome completo</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Dr. Nome Exemplo"
-                    placeholderTextColor="#a1a1aa"
-                    value={nome}
-                    onChangeText={setNome}
-                  />
-                  <Ionicons name="checkmark" size={18} color="#a1a1aa" />
-                </View>
-
-                <Text style={styles.label}>CPF ou email p/ login</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="@gmail"
-                    placeholderTextColor="#a1a1aa"
-                    value={cpfOrEmail}
-                    onChangeText={setCpfOrEmail}
-                    autoCapitalize="none"
-                  />
-                  <Ionicons name="checkmark" size={18} color="#a1a1aa" />
-                </View>
-
-                {/* Busca CBO */}
-                <Text style={styles.label}>CBO / Ocupação</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Digite para buscar (ex: Enfermeiro, Medico)"
-                    placeholderTextColor="#a1a1aa"
-                    value={cboQuery}
-                    onChangeText={handleSearchCBO}
-                  />
-                  {selectedCBO ? (
-                    <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
-                  ) : (
-                    <Ionicons name="search" size={18} color="#a1a1aa" />
-                  )}
-                </View>
-
-                {/* Dropdown de Resultados */}
-                {cboResults.length > 0 && (
-                  <View style={styles.dropdownList}>
-                    {cboResults.slice(0, 5).map((item) => (
-                      <TouchableOpacity
-                        key={item.co_cbo}
-                        style={styles.dropdownItem}
-                        onPress={() => handleSelectCBO(item)}
-                      >
-                        <Text style={styles.cboCode}>{item.co_cbo}</Text>
-                        <Text style={styles.cboText} numberOfLines={1}>
-                          {item.no_cbo}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-
-                {/* Seleção de Equipe */}
-                <Text style={styles.label}>Equipe</Text>
-                <View style={styles.optionsGroup}>
-                  {EQUIPES_OPCOES.map((option) => (
-                    <TouchableOpacity
-                      key={option}
-                      style={[
-                        styles.optionButton,
-                        equipe === option && styles.optionButtonSelected,
-                      ]}
-                      onPress={() => setEquipe(option)}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          equipe === option && styles.optionTextSelected,
-                        ]}
-                      >
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <Text style={styles.label}>Senha</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="••••••••••"
-                    placeholderTextColor="#a1a1aa"
-                    secureTextEntry={!showPassword}
-                    value={senha}
-                    onChangeText={setSenha}
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Ionicons name={showPassword ? 'eye' : 'eye-outline'} size={18} color="#a1a1aa" />
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.label}>Confirmar Senha</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="••••••••••"
-                    placeholderTextColor="#a1a1aa"
-                    secureTextEntry={!showConfirmPassword}
-                    value={confirmarSenha}
-                    onChangeText={setConfirmarSenha}
-                  />
-                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                    <Ionicons name={showConfirmPassword ? 'eye' : 'eye-outline'} size={18} color="#a1a1aa" />
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity disabled={loading} onPress={handleRegister}>
-                  <LinearGradient
-                    colors={['#0052cc', '#d97706']}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={styles.button}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>Cadastrar</Text>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </TouchableWithoutFeedback>
+          {Platform.OS === 'web' ? (
+            content
+          ) : (
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              {content}
+            </TouchableWithoutFeedback>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>

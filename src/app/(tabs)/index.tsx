@@ -28,11 +28,10 @@ export default function HomeScreen() {
   const [visitaSelecionada, setVisitaSelecionada] = useState<Visita | null>(null);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
 
-  // Estados dos contadores dos Cards
   const [totalPacientes, setTotalPacientes] = useState<number>(0);
   const [atendimentosMes, setAtendimentosMes] = useState<number>(0);
 
-  // Pega a data de HOJE no formato YYYY-MM-DD
+  // Pega a data de HOJE
   const hojeKey = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -41,7 +40,7 @@ export default function HomeScreen() {
 
     setLoading(true);
 
-    // 1. Escuta visitas de HOJE no Firestore
+    // pega a visitas de HOJE
     const qVisitas = query(
       collection(db, 'visitas'),
       where('data', '==', hojeKey),
@@ -68,12 +67,12 @@ export default function HomeScreen() {
       setLoading(false);
     });
 
-    // 2. Escuta o Total de Pacientes na carteira
+    // Total de Pacientes at
     const unsubscribePacientes = onSnapshot(collection(db, 'pacientes'), (snapshot) => {
       setTotalPacientes(snapshot.size);
     });
 
-    // 3. Escuta Total de Atendimentos do MÊS ATUAL
+    // Total de Atendimentos do MÊS 
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
@@ -106,9 +105,7 @@ export default function HomeScreen() {
         Acessos rápidos
       </Text>
 
-      {/* CARDS DE ACESSO RÁPIDO */}
       <View style={styles.gridContainer}>
-        {/* CARD 1: VISITAS AGENDADAS HOJE (AZUL) */}
         <AcessosCard 
           iconFamily="FontAwesome5" 
           iconName="address-book" 
@@ -118,7 +115,6 @@ export default function HomeScreen() {
           onPress={() => {}} 
         />
 
-        {/* CARD 2: PACIENTES ATIVOS (VERDE) */}
         <AcessosCard 
           iconFamily="MaterialIcons" 
           iconName="people" 
@@ -128,7 +124,6 @@ export default function HomeScreen() {
           onPress={() => router.push('/pacientes' as any)} 
         />
 
-        {/* CARD 3: ATENDIMENTOS NO MÊS (ROXO/AZUL ESCURO) */}
         <AcessosCard 
           iconFamily="MaterialCommunityIcons" 
           iconName="file-document-check-outline" 

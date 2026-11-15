@@ -18,7 +18,7 @@ export function PesquisaCard({ value, onChangeText }: PesquisaProps) {
     <View
       style={[
         styles.container,
-        { backgroundColor } // Mantém a cor de fundo dinâmica do tema
+        { backgroundColor } 
       ]}
     >
       <Ionicons name="search-outline" size={28} color={textColor } />

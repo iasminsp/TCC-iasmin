@@ -62,7 +62,7 @@ export default function HistoricoAtendimentos() {
   const [todosDocumentos, setTodosDocumentos] = useState<HistoricoItem[]>([]);
   const [historicoList, setHistoricoList] = useState<HistoricoItem[]>([]);
 
-  // Busca atendimentos do paciente no Firestore (na coleção principal 'atendimentos')
+  // Busca atendimentos do paciente no Firestore (subcoleção 'pacientes/{id}/atendimentos' + coleção raiz 'atendimentos')
   useEffect(() => {
     const fetchHistorico = async () => {
       if (!pacienteId) {
@@ -72,21 +72,10 @@ export default function HistoricoAtendimentos() {
 
       try {
         setLoading(true);
-        // Consulta apenas com where('pacienteId', '==', pacienteId) sem orderBy
-        // para evitar a exigência de índice composto no Firestore
-        const atendimentosRef = collection(db, 'atendimentos');
-        const q = query(
-          atendimentosRef,
-          where('pacienteId', '==', pacienteId)
-        );
-        const querySnapshot = await getDocs(q);
-
-        const lista: HistoricoItem[] = [];
-
-        querySnapshot.forEach((docSnap) => {
+        const processDoc = (docSnap: any): HistoricoItem => {
           const data = docSnap.data();
           const tipo = data.tipo || 'Atendimento';
-          
+
           // Trata carimbo de data/hora
           let dataHoraStr = 'Data não informada';
           let dateObj: Date | null = null;
@@ -110,7 +99,7 @@ export default function HistoricoAtendimentos() {
             data.formData?.numeroAtendimento ||
             docSnap.id.substring(0, 8).toUpperCase();
 
-          lista.push({
+          return {
             id: docSnap.id,
             numeroAtendimento: numAtendimento,
             tipoDocumento: tipo,
@@ -118,10 +107,39 @@ export default function HistoricoAtendimentos() {
             rawDate: dateObj,
             rota: ROTA_POR_TIPO[tipo] || '/Soap',
             formData: data.formData,
-          });
-        });
+          };
+        };
 
-        // Ordena em memória pela data mais recente (decrescente)
+        const listaMap = new Map<string, HistoricoItem>();
+
+        // 1. Busca na subcoleção do paciente: /pacientes/{pacienteId}/atendimentos
+        try {
+          const subColRef = collection(db, 'pacientes', pacienteId, 'atendimentos');
+          const subSnap = await getDocs(subColRef);
+          subSnap.forEach((docSnap) => {
+            listaMap.set(docSnap.id, processDoc(docSnap));
+          });
+        } catch (e) {
+          console.log('Sem subcoleção de atendimentos ou erro ao buscar:', e);
+        }
+
+        // 2. Busca na coleção raiz: /atendimentos com pacienteId == pacienteId
+        try {
+          const raizRef = collection(db, 'atendimentos');
+          const qRaiz = query(raizRef, where('pacienteId', '==', pacienteId));
+          const raizSnap = await getDocs(qRaiz);
+          raizSnap.forEach((docSnap) => {
+            if (!listaMap.has(docSnap.id)) {
+              listaMap.set(docSnap.id, processDoc(docSnap));
+            }
+          });
+        } catch (e) {
+          console.log('Erro ao buscar na coleção raiz de atendimentos:', e);
+        }
+
+        const lista = Array.from(listaMap.values());
+
+        // Ordena data mais recente
         lista.sort((a, b) => {
           const timeA = a.rawDate ? a.rawDate.getTime() : 0;
           const timeB = b.rawDate ? b.rawDate.getTime() : 0;
@@ -140,7 +158,7 @@ export default function HistoricoAtendimentos() {
     fetchHistorico();
   }, [pacienteId]);
 
-  // Função para converter string DD/MM/AAAA em Date para comparação
+  // Função pra achar dattaa
   const parseDateBR = (dateStr: string): Date | null => {
     const parts = dateStr.trim().split('/');
     if (parts.length === 3) {
@@ -213,13 +231,11 @@ export default function HistoricoAtendimentos() {
     <View style={[styles.container, { backgroundColor }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         
-        {/* TÍTULO DO HISTÓRICO */}
         <View style={styles.titleRow}>
           <Ionicons name="list-outline" size={22} color={textColor} style={{ marginRight: 8 }} />
           <Text style={[styles.mainTitle, { color: textColor }]}>Histórico(s) - Atendimento</Text>
         </View>
 
-        {/* CARD DE FILTROS */}
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
@@ -264,13 +280,11 @@ export default function HistoricoAtendimentos() {
             />
           </View>
 
-          {/* BOTÃO BUSCAR */}
           <TouchableOpacity style={styles.searchButton} onPress={handleSearch} activeOpacity={0.7}>
             <Ionicons name="search" size={18} color="#FFF" />
           </TouchableOpacity>
         </View>
 
-        {/* LISTA DE DOCUMENTOS ENCONTRADOS */}
         <Text style={[styles.sectionSubtitle, { color: textColor }]}>Documentos Registrados</Text>
 
         {loading ? (

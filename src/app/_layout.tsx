@@ -25,7 +25,6 @@ export default function RootLayout() {
     async function configureSystemUI() {
       if (Platform.OS === 'android') {
         try {
-          // Define a cor de fundo do container nativo como transparente
           await SystemUI.setBackgroundColorAsync('transparent');
         } catch (error) {
           console.log('Erro ao configurar SystemUI:', error);
@@ -36,7 +35,6 @@ export default function RootLayout() {
     configureSystemUI();
   }, []);
 
-  // Escuta o estado da autenticação no Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -46,23 +44,19 @@ export default function RootLayout() {
     return () => unsubscribe();
   }, []);
 
-  // Controla a navegação automática
   useEffect(() => {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    // Se NÃO estiver logado e NÃO estiver na pasta (auth), vai para o Login
     if (!user && !inAuthGroup) {
       router.replace('/(auth)');
     } 
-    // Se ESTIVER logado e tentar acessar a pasta (auth), vai para a Home
     else if (user && inAuthGroup) {
       router.replace('/(tabs)');
     }
   }, [user, loading, segments]);
 
-  // Exibe indicador de carregamento enquanto valida a sessão
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -74,10 +68,8 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* Rota de Autenticação */}
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
 
-        {/* Rotas Privadas da Aplicação */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen 

@@ -72,7 +72,6 @@ const styles = StyleSheet.create({
     marginLeft: "5%",
     marginTop: 20,
     width:'90%',
-    // Sombra leve para destacar no fundo claro
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

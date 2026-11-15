@@ -20,7 +20,6 @@ export function AgendaCard({
 }: AgendaCardProps) {
   const colorScheme = useColorScheme();
   
-  // Define as cores dinâmicas para o cartão e textos com base no tema
   const cardBackgroundColor = colorScheme === 'dark' ? '#2A2D32' : '#f3f4f6';
   const nameTextColor = colorScheme === 'dark' ? '#ffffff' : '#11181C';
   const addressTextColor = colorScheme === 'dark' ? '#9CA3AF' : '#6b7280';

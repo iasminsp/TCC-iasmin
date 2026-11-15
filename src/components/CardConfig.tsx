@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     width:'90%',
     // Sombra leve para destacar no fundo claro
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,

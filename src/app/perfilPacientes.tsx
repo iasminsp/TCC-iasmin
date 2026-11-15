@@ -10,14 +10,10 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
   const router = useRouter();
   const colorScheme = useColorScheme();
   
-  // Variáveis padrão de cores para a tela inteira
   const backgroundColor = colorScheme === 'dark' ? '#151718' : '#fff';
   const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
-
-  // Cor de fundo do card/balão combinando com o tema
   const cardBgColor = colorScheme === 'dark' ? '#3A3D42' : '#f3f4f6';
 
-  // Resgata os parâmetros vindos da navegação
   const { id, nome: nomeParam, condicao: condicaoParam, DN: dnParam, endereco: enderecoParam } = useLocalSearchParams<{
     id?: string;
     nome?: string;
@@ -46,7 +42,6 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
         if (pacienteSnap.exists()) {
           const data = pacienteSnap.data();
 
-          // Tenta pegar o endereço completo formatado, ou monta a partir dos campos individuais
           let enderecoFormatado = data.endereco || '';
 
           if (!enderecoFormatado && (data.logradouro || data.rua)) {
@@ -98,7 +93,6 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      {/* Balão do Endereço adaptado dinamicamente */}
       <View style={[styles.enderecoCard, { backgroundColor: cardBgColor }]}>
         {loading ? (
           <ActivityIndicator color="#0055A5" />
@@ -108,14 +102,6 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
           </Text>
         )}
       </View>
-
-      <FunçoesCard
-        iconFamily="FontAwesome5"
-        iconName="folder-open"
-        iconSize={20}
-        title="Evolução SOAP"
-        onPress={() => router.push({ pathname: '/Soap', params: { id, nome, DN, endereco } })}
-      />
       <FunçoesCard
         iconFamily="MaterialCommunityIcons"
         iconName="file-document-plus-outline"
@@ -123,6 +109,13 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
         title="Ficha de Admissão/Elegiabilidade"
         onPress={() => router.push({ pathname: '/elegiabilidade', params: { id, nome, DN, endereco } })}
       />  
+      <FunçoesCard
+        iconFamily="FontAwesome5"
+        iconName="folder-open"
+        iconSize={20}
+        title="Evolução SOAP"
+        onPress={() => router.push({ pathname: '/Soap', params: { id, nome, DN, endereco } })}
+      />
       <FunçoesCard
         iconFamily="MaterialCommunityIcons"
         iconName="folder-home-outline"

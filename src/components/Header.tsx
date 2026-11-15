@@ -17,10 +17,8 @@ export default function Header({ title, iconName, showBack = true, onIconPress }
       <View style={styles.headerContainer}>
        
 
-        {/* Título */}
         <Text style={styles.headerTitle}>{title}</Text>
 
-        {/* Ícone Direita */}
         {iconName && (
           <TouchableOpacity onPress={onIconPress}>
             <Ionicons name={iconName} size={24} color="#fff" />

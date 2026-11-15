@@ -1,57 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  useColorScheme,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { CheckboxOption } from '@/src/components/Checkbox';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseConfig';
-
-const CONDICOES_OPCOES = [
-  { id: 'acamado', label: 'Acamado' },
-  { id: 'domiciliado', label: 'Domiciliado' },
-  { id: 'ulceras', label: 'Úlceras / Feridas (grau III ou IV)' },
-  { id: 'nutricional', label: 'Acompanhamento nutricional' },
-  { id: 'sng', label: 'Uso de sonda naso-gástrica - SNG' },
-  { id: 'sne', label: 'Uso de sonda naso-enteral - SNE' },
-  { id: 'gastrostomia', label: 'Uso de gastrostomia' },
-  { id: 'colostomia', label: 'Uso de colostomia' },
-  { id: 'cistostomia', label: 'Uso de cistostomia' },
-  { id: 'svd', label: 'Uso de sonda vesical de demora - SVD' },
-  { id: 'pre_operatorio', label: 'Acompanhamento pré-operatório' },
-  { id: 'pos_operatorio', label: 'Acompanhamento pós-operatório' },
-  { id: 'ortese_protese', label: 'Adaptação ao uso de órtese / prótese' },
-  { id: 'reabilitacao_domiciliar', label: 'Reabilitação domiciliar' },
-  { id: 'paliativos_oncologico', label: 'Cuidados paliativos oncológico' },
-  { id: 'paliativos_nao_oncologico', label: 'Cuidados paliativos não-oncológico' },
-  { id: 'oxigenoterapia', label: 'Oxigenoterapia domiciliar' },
-  { id: 'traqueostomia', label: 'Uso de traqueostomia' },
-  { id: 'aspirador_vias_aereas', label: 'Uso de aspirador de vias aéreas para higiene brônquica' },
-  { id: 'ventilatorio_cpap', label: 'Suporte ventilatório não invasivo, CPAP' },
-  { id: 'ventilatorio_bipap', label: 'Suporte ventilatório não invasivo, BiPAP' },
-  { id: 'dialise_peritoneal', label: 'Diálise peritoneal' },
-  { id: 'paracentese', label: 'Paracentese' },
-  { id: 'medicacao_parenteral', label: 'Medicação parenteral' },
-];
-
-const CONDICOES_OPCOES2 = [
-  { id: 'permanencia', label: 'Permanência' },
-  { id: 'alta_administrativa', label: 'Alta administrativa' },
-  { id: 'alta_clinica', label: 'Alta clínica' },
-  { id: 'obito', label: 'Óbito' },
-  { id: 'ad1', label: 'Atenção Básica (AD1)' },
-  { id: 'urgencia_emergencia', label: 'Serviço de urgência e emergência' },
-  { id: 'internacao_hospitalar', label: 'Serviço de internação hospitalar' },
-];
+import { CheckboxOption } from '@/src/components/Checkbox';
+import { Seletor } from '@/src/components/Seletor';
+import { CIAP2_SAD_OPCOES } from '@/src/data/ciapData';
+import { CID10_SAD_OPCOES } from '@/src/data/cidData';
+import { PROCEDIMENTOS_SAD_OPCOES } from '@/src/data/procedimentosSigtapData.ts';
+import { CONDICOES_OPCOES, CONDICOES_OPCOES2, MODALIDADE_AD_ATENDIMENTO_OPCOES, TIPO_ATENDIMENTO_OPCOES } from '@/src/data/atendimentoData';
 
 export default function AtendimentoDomiciliar() {
   const router = useRouter();
@@ -75,35 +33,25 @@ export default function AtendimentoDomiciliar() {
 
   const [loadingUserData, setLoadingUserData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  // State unificado do formulário
   const [formData, setFormData] = useState({
-    // Profissional
     municipio: 'Patos de Minas',
     cbo: '',
     unidade: 'Melhor em Casa - SAD',
     profissional: '',
     data: '',
-
-    // Dados do Paciente
     pacienteNome: params.nome || '',
     localAtendimento: params.endereco || 'Domicílio',
     dataNascimento: params.DN || '',
     numCartaoSus: '',
     sexo: '',
-
-    // Modalidade AD & Atendimento
     modalidadeAd: '',
     tipoAtendimento: '',
-
-    // CIAP / CID
     ciap: '',
     cid: '',
-
-    // Procedimentos SIA
     procedimentoSia: '',
     procedimentoCid: '',
-    quantidadeSia: '',
   });
 
   const [condicoesSelecionadas, setCondicoesSelecionadas] = useState<string[]>([]);
@@ -114,7 +62,6 @@ export default function AtendimentoDomiciliar() {
       try {
         setLoadingUserData(true);
 
-        // SE VEIO DO HISTÓRICO: Carrega o atendimento salvo diretamente da coleção principal 'atendimentos'
         if (params.atendimentoId) {
           const docRef = doc(db, 'atendimentos', params.atendimentoId);
           const docSnap = await getDoc(docRef);
@@ -134,12 +81,13 @@ export default function AtendimentoDomiciliar() {
           return;
         }
 
-        // SE FOR NOVO ATENDIMENTO: Carrega dados do profissional logado e do paciente
         const user = auth.currentUser;
         const now = new Date();
         const dataFormatted = now.toLocaleDateString('pt-BR');
 
-        let profissionalData: Partial<typeof formData> = { data: dataFormatted };
+        let profissionalData: Partial<typeof formData> = { 
+          data: dataFormatted 
+        };
 
         if (user) {
           const userDocRef = doc(db, 'users', user.uid);
@@ -151,9 +99,7 @@ export default function AtendimentoDomiciliar() {
             let cboText = '';
             if (userData.cbo) {
               if (typeof userData.cbo === 'object') {
-                cboText = `${userData.cbo.codigo || ''} ${
-                  userData.cbo.descricao ? '- ' + userData.cbo.descricao : ''
-                }`.trim();
+                cboText = `${userData.cbo.codigo || ''} ${userData.cbo.descricao ? '- ' + userData.cbo.descricao : ''}`.trim();
               } else {
                 cboText = String(userData.cbo);
               }
@@ -234,7 +180,6 @@ export default function AtendimentoDomiciliar() {
 
     setSaving(true);
     try {
-      // 1. Atualiza dados do paciente na coleção principal
       const pacienteRef = doc(db, 'pacientes', params.id);
       await updateDoc(pacienteRef, {
         nome: formData.pacienteNome,
@@ -243,7 +188,6 @@ export default function AtendimentoDomiciliar() {
         sexo: formData.sexo,
       });
 
-      // 2. Salva a Ficha de Atendimento Domiciliar na coleção principal 'atendimentos'
       await addDoc(collection(db, 'atendimentos'), {
         pacienteId: params.id,
         tipo: 'Atendimento Domiciliar',
@@ -256,12 +200,11 @@ export default function AtendimentoDomiciliar() {
         createdAt: serverTimestamp(),
       });
 
-      Alert.alert('Sucesso', 'Ficha de Atendimento Domiciliar salva com sucesso!', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        router.back();
+      }, 1500);
     } catch (error) {
       console.error('Erro ao salvar Atendimento Domiciliar:', error);
       Alert.alert('Erro', 'Não foi possível salvar os dados da ficha.');
@@ -272,9 +215,14 @@ export default function AtendimentoDomiciliar() {
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
+      {showToast && (
+        <View style={styles.toastContainer}>
+          <Ionicons name="checkmark-circle" size={24} color="#FFF" style={{ marginRight: 8 }} />
+          <Text style={styles.toastText}>Ficha salva com sucesso!</Text>
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* PROFISSIONAL */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>PROFISSIONAL</Text>
         </View>
@@ -342,7 +290,6 @@ export default function AtendimentoDomiciliar() {
           )}
         </View>
 
-        {/* DADOS DO PACIENTE */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>DADOS DO PACIENTE</Text>
         </View>
@@ -405,37 +352,34 @@ export default function AtendimentoDomiciliar() {
           </View>
         </View>
 
-        {/* MODALIDADE AD */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>MODALIDADE AD</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.label, { color: textColor }]}>Modalidade AD</Text>
-          <TextInput
-            style={[styles.input, { color: textColor, borderColor }]}
-            placeholder="Selecione a Modalidade AD..."
-            placeholderTextColor={placeholderColor}
+          <Seletor
+            label="Modalidade AD"
             value={formData.modalidadeAd}
-            onChangeText={(v) => handleChange('modalidadeAd', v)}
+            options={MODALIDADE_AD_ATENDIMENTO_OPCOES}
+            onSelect={(item) => handleChange('modalidadeAd', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione a Modalidade AD..."
+            isDark={isDark}
           />
         </View>
 
-        {/* TIPO DE ATENDIMENTO */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>TIPO DE ATENDIMENTO</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <Text style={[styles.label, { color: textColor }]}>Tipo Atendimento</Text>
-          <TextInput
-            style={[styles.input, { color: textColor, borderColor }]}
-            placeholder="Selecione o Tipo de Atendimento..."
-            placeholderTextColor={placeholderColor}
+          <Seletor
+            label="Tipo Atendimento"
             value={formData.tipoAtendimento}
-            onChangeText={(v) => handleChange('tipoAtendimento', v)}
+            options={TIPO_ATENDIMENTO_OPCOES}
+            onSelect={(item) => handleChange('tipoAtendimento', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione o Tipo de Atendimento..."
+            isDark={isDark}
           />
         </View>
 
-        {/* CONDIÇÃO(ÕES) AVALIADA(S) */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>CONDIÇÃO(ÕES) AVALIADA(S)</Text>
         </View>
@@ -450,73 +394,63 @@ export default function AtendimentoDomiciliar() {
           ))}
         </View>
 
-        {/* CIAP / CID */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>CIAP / CID</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.row}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: textColor }]}>CIAP</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, borderColor }]}
-                placeholder="Código ou Descrição CIAP"
-                placeholderTextColor={placeholderColor}
+              <Seletor
+                label="CIAP"
                 value={formData.ciap}
-                onChangeText={(v) => handleChange('ciap', v)}
+                options={CIAP2_SAD_OPCOES}
+                allowCustomText={true}
+                onCustomTextChange={(text) => handleChange('ciap', text)}
+                onSelect={(item) => handleChange('ciap', `${item.codigo} - ${item.descricao}`)}
+                placeholder="Selecione CIAP..."
+                isDark={isDark}
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: textColor }]}>CID</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, borderColor }]}
-                placeholder="Código ou Descrição CID"
-                placeholderTextColor={placeholderColor}
+              <Seletor
+                label="CID"
                 value={formData.cid}
-                onChangeText={(v) => handleChange('cid', v)}
+                options={CID10_SAD_OPCOES}
+                allowCustomText={true}
+                onCustomTextChange={(text) => handleChange('cid', text)}
+                onSelect={(item) => handleChange('cid', `${item.codigo} - ${item.descricao}`)}
+                placeholder="Selecione CID..."
+                isDark={isDark}
               />
             </View>
           </View>
         </View>
 
-        {/* PROCEDIMENTOS SIA */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>PROCEDIMENTOS SIA</Text>
         </View>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-          <View style={styles.row}>
-            <View style={{ flex: 2 }}>
-              <Text style={[styles.label, { color: textColor }]}>Procedimento</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, borderColor }]}
-                placeholder="Código do procedimento"
-                placeholderTextColor={placeholderColor}
-                value={formData.procedimentoSia}
-                onChangeText={(v) => handleChange('procedimentoSia', v)}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.label, { color: textColor }]}>CID</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, borderColor }]}
-                placeholder="CID"
-                placeholderTextColor={placeholderColor}
-                value={formData.procedimentoCid}
-                onChangeText={(v) => handleChange('procedimentoCid', v)}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.label, { color: textColor }]}>Qtd.</Text>
-              <TextInput
-                style={[styles.input, { color: textColor, borderColor }]}
-                placeholder="1"
-                placeholderTextColor={placeholderColor}
-                keyboardType="numeric"
-                value={formData.quantidadeSia}
-                onChangeText={(v) => handleChange('quantidadeSia', v)}
-              />
-            </View>
-          </View>
+          <Seletor
+            label="Procedimento"
+            value={formData.procedimentoSia}
+            options={PROCEDIMENTOS_SAD_OPCOES}
+            allowCustomText={true}
+            onCustomTextChange={(text) => handleChange('procedimentoSia', text)}
+            onSelect={(item) => handleChange('procedimentoSia', `${item.codigo} - ${item.descricao}`)}
+            placeholder="Selecione o procedimento..."
+            isDark={isDark}
+          />
+
+          <Seletor
+            label="CID"
+            value={formData.procedimentoCid}
+            options={CID10_SAD_OPCOES}
+            allowCustomText={true}
+            onCustomTextChange={(text) => handleChange('procedimentoCid', text)}
+            onSelect={(item) => handleChange('procedimentoCid', item.codigo)}
+            placeholder="Selecione o CID..."
+            isDark={isDark}
+          />
         </View>
 
         {/* CONDUTA / MOTIVOS SAÍDA */}
@@ -534,7 +468,6 @@ export default function AtendimentoDomiciliar() {
           ))}
         </View>
 
-        {/* BOTÃO SALVAR */}
         <TouchableOpacity
           style={[styles.saveButton, saving && { opacity: 0.7 }]}
           onPress={handleSave}
@@ -549,7 +482,6 @@ export default function AtendimentoDomiciliar() {
             </>
           )}
         </TouchableOpacity>
-
       </ScrollView>
     </View>
   );
@@ -616,5 +548,25 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  toastContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    zIndex: 9999,
+    backgroundColor: 'rgba(46, 125, 50, 0.9)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+  },
+  toastText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });

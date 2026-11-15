@@ -21,7 +21,6 @@ import Header from '../../components/Header';
 import { AgendaCard } from '../../components/CardAgenda';
 import { AddCard } from '../../components/Add';
 
-// Adicionado o campo endereco opcional na interface do paciente
 interface Paciente {
   id: string;
   nome: string;
@@ -65,18 +64,13 @@ export default function AgendaScreen() {
   const backgroundColor = colorScheme === 'dark' ? '#151718' : '#fff';
   const textColor = colorScheme === 'dark' ? '#f2f3f4' : '#11181C';
 
-  // Estados de Data
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
-  const [horaDate, setHoraDate] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // Estados de Dados do Firestore
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [listaPacientes, setListaPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados do Modal e Formulário
   const [modalVisible, setModalVisible] = useState(false);
   const [buscaPaciente, setBuscaPaciente] = useState('');
   const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null);
@@ -91,13 +85,12 @@ export default function AgendaScreen() {
   const formattedDateKey = date.toISOString().split('T')[0];
   const formattedDateBR = date.toLocaleDateString('pt-BR');
 
-  // 1. Busca os pacientes do Firestore trazendo também o 'endereco' cadastrado
   useEffect(() => {
     const unsubPacientes = onSnapshot(collection(db, 'pacientes'), (snapshot) => {
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         nome: doc.data().nome,
-        endereco: doc.data().endereco || '', // Puxa o endereço cadastrado do paciente
+        endereco: doc.data().endereco || '',
       }));
       setListaPacientes(docs);
     });
@@ -105,7 +98,7 @@ export default function AgendaScreen() {
     return () => unsubPacientes();
   }, []);
 
-  // 2. Busca as visitas filtradas pela data selecionada
+  // Busca as visitas filtradas pela data
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -139,17 +132,17 @@ export default function AgendaScreen() {
     return () => unsubVisitas();
   }, [formattedDateKey]);
 
-  const onChangeTime = (event: any, selectedTime?: Date) => {
-    setShowTimePicker(false);
-    if (selectedTime) {
-      setHoraDate(selectedTime);
-      const horas = selectedTime.getHours().toString().padStart(2, '0');
-      const minutos = selectedTime.getMinutes().toString().padStart(2, '0');
-      setHorario(`${horas}:${minutos}`);
+  const handleHorarioChange = (text: string) => {
+    const cleaned = text.replace(/\D/g, ''); 
+    let formatted = cleaned;
+    
+    if (cleaned.length > 2) {
+      formatted = `${cleaned.slice(0, 2)}:${cleaned.slice(2, 4)}`;
     }
+    
+    setHorario(formatted);
   };
 
-  // Função para filtrar a lista ao digitar
   const handleDigitarPaciente = (texto: string) => {
     setBuscaPaciente(texto);
     setPacienteSelecionado(null);
@@ -164,14 +157,13 @@ export default function AgendaScreen() {
     }
   };
 
-  // AQUI: Ao selecionar o paciente, o endereço dele já entra direto no input de endereço
   const handleSelecionarPaciente = (p: Paciente) => {
     setPacienteSelecionado(p);
     setBuscaPaciente(p.nome);
     if (p.endereco) {
-      setEndereco(p.endereco); // Preenche o campo de endereço automaticamente
+      setEndereco(p.endereco);
     }
-    setPacientesFiltrados([]); // Esconde a lista de sugestões
+    setPacientesFiltrados([]);
   };
 
   const handleSalvarVisita = async () => {
@@ -182,7 +174,10 @@ export default function AgendaScreen() {
     }
 
     const nomeFinal = pacienteSelecionado ? pacienteSelecionado.nome : buscaPaciente;
-    if (!nomeFinal.trim() || !horario.trim()) return;
+    if (!nomeFinal.trim() || !horario.trim()) {
+      Alert.alert('Atenção', 'Informe o paciente e o horário da visita.');
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'visitas'), {
@@ -195,7 +190,6 @@ export default function AgendaScreen() {
         createdAt: serverTimestamp(),
       });
 
-      // Limpa os campos
       setBuscaPaciente('');
       setPacienteSelecionado(null);
       setPacientesFiltrados([]);
@@ -276,7 +270,7 @@ export default function AgendaScreen() {
             <AgendaCard
               key={visita.id}
               horario={visita.horario}
-              nome={visita.motivo ? `${visita.pacienteNome} • ${visita.motivo}` : visita.pacienteNome}
+              nome={visita.motivo ? `${visita.pacienteNome}\n${visita.motivo}` : visita.pacienteNome}
               endereco={visita.endereco}
               status={visita.status}
               onStatusPress={() => {
@@ -301,7 +295,6 @@ export default function AgendaScreen() {
         />
       )}
 
-      {/* Modal com Autocomplete/Pesquisa de Paciente */}
       <BaseModal
         visible={modalVisible}
         onClose={() => {
@@ -319,7 +312,6 @@ export default function AgendaScreen() {
             style={styles.input}
           />
 
-          {/* Sugestões de pacientes durante a pesquisa */}
           {pacientesFiltrados.length > 0 && (
             <View style={styles.suggestionsContainer}>
               <ScrollView nestedScrollEnabled style={{ maxHeight: 120 }}>
@@ -340,25 +332,16 @@ export default function AgendaScreen() {
           )}
         </View>
 
-        <TouchableOpacity 
-          activeOpacity={0.7}
-          onPress={() => setShowTimePicker(true)}
-          style={styles.inputClickable}
-        >
-          <Text style={[styles.inputClickableText, { color: horario ? '#1f2937' : '#6b7280' }]}>            
-            {horario ? `Horário: ${horario}` : 'Selecione o horário...'}
-          </Text>
-        </TouchableOpacity>
+        <TextInput
+          placeholder="Horário (ex: 08:30, 14:15)"
+          placeholderTextColor="#9ca3af"
+          value={horario}
+          onChangeText={handleHorarioChange}
+          style={styles.input}
+          keyboardType="numeric"
+          maxLength={5}
+        />
 
-        {showTimePicker && (
-          <DateTimePicker
-            value={horaDate}
-            mode="time"
-            is24Hour={true}
-            display="default"
-            onChange={onChangeTime}
-          />
-        )}
         <TextInput
           placeholder="Motivo da visita (ex: Consulta de rotina)"
           placeholderTextColor="#9ca3af"
@@ -366,6 +349,7 @@ export default function AgendaScreen() {
           onChangeText={setMotivo}
           style={styles.input}
         />
+
         <TextInput
           placeholder="Endereço da visita"
           placeholderTextColor="#9ca3af"
@@ -377,7 +361,6 @@ export default function AgendaScreen() {
         <Button title="Salvar Visita" color="#2563EB" onPress={handleSalvarVisita} />
       </BaseModal>
 
-      {/* Modal de Status */}
       <Modal visible={statusModalVisible} transparent animationType="fade" onRequestClose={() => setStatusModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -452,16 +435,6 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     padding: 10,
-  },
-  inputClickable: {
-    borderWidth: 1,
-    borderColor: '#b8a9a995',
-    borderRadius: 8,
-    padding: 12,
-    justifyContent: 'center',
-  },
-  inputClickableText: {
-    fontSize: 14,
   },
   suggestionsContainer: {
     borderWidth: 1,

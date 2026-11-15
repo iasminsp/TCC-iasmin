@@ -8,7 +8,6 @@ import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -30,7 +29,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabelStyle: { fontSize: 9 },
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -38,7 +37,7 @@ export default function TabLayout() {
         options={{
           title: 'Pacientes',
           tabBarLabelStyle: { fontSize: 9 },
-          tabBarIcon: ({ color }) => <Octicons name="people" size={28} color={color} />,
+          tabBarIcon: ({ color }) => <Octicons name="people" size={28} color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -46,7 +45,7 @@ export default function TabLayout() {
         options={{
           title: 'Agenda',
           tabBarLabelStyle: { fontSize: 9 },
-          tabBarIcon: ({ color }) => <EvilIcons name="calendar" size={38} color={color} />,
+          tabBarIcon: ({ color }) => <EvilIcons name="calendar" size={38} color={color as string} />,
         }}
       />
       <Tabs.Screen
@@ -54,7 +53,7 @@ export default function TabLayout() {
         options={{
           title: 'Perfil',
           tabBarLabelStyle: { fontSize: 9 },
-          tabBarIcon: ({ color }) => <SimpleLineIcons name="menu" size={26} color={color} />,
+          tabBarIcon: ({ color }) => <SimpleLineIcons name="menu" size={26} color={color as string} />,
         }}
       />
     </Tabs>

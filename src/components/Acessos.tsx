@@ -48,13 +48,11 @@ export function AcessosCard({iconName, iconFamily, iconColor, iconSize, title, o
         styles.cardContainer,{ backgroundColor},
       ]}
     >
-        {/* Container do Ícone */}
       {iconName && (
         <View style={styles.iconContainer}>
           {renderIcon()}
         </View>
       )}
-      {/* Bloco das Informações (Nome e Endereço) */}
       <View style={styles.infoContainer}>
         <Text style={[styles.titleText, { color: textColor }]}>
           {title}
@@ -67,15 +65,14 @@ export function AcessosCard({iconName, iconFamily, iconColor, iconSize, title, o
 
 const styles = StyleSheet.create({
   cardContainer: {
-    width: '28%',             // Largura ajustada para caber 3 por linha com folga
-    aspectRatio: 6/7,        // Mantém a proporção da altura em relação à largura
+    width: '28%',            
+    aspectRatio: 6/7,       
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 20,
     borderRadius: 22,
     margin: "2%",
-    // Sombra leve para destacar no fundo claro
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
