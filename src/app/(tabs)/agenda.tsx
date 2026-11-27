@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  useColorScheme, 
-  TouchableOpacity, 
-  Modal, 
-  TextInput, 
-  Button, 
-  Alert,
-  ScrollView, 
-  ActivityIndicator,
+import {View, Text, StyleSheet, useColorScheme, TouchableOpacity, Modal, TextInput,Button, Alert, ScrollView, ActivityIndicator,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -29,6 +18,7 @@ interface Paciente {
 
 interface Visita {
   id: string;
+  pacienteId?: string;
   pacienteNome: string;
   motivo: string;
   horario: string;
@@ -113,6 +103,7 @@ export default function AgendaScreen() {
     const unsubVisitas = onSnapshot(q, (snapshot) => {
       const docs: Visita[] = snapshot.docs.map(doc => ({
         id: doc.id,
+        pacienteId: doc.data().pacienteId || '',
         pacienteNome: doc.data().pacienteNome,
         motivo: doc.data().motivo,
         horario: doc.data().horario,
@@ -182,6 +173,7 @@ export default function AgendaScreen() {
     try {
       await addDoc(collection(db, 'visitas'), {
         userId: user.uid,
+        pacienteId: pacienteSelecionado ? pacienteSelecionado.id : null,
         pacienteNome: nomeFinal,
         motivo: motivo.trim(),
         horario: horario.trim(),
@@ -273,6 +265,20 @@ export default function AgendaScreen() {
               nome={visita.motivo ? `${visita.pacienteNome}\n${visita.motivo}` : visita.pacienteNome}
               endereco={visita.endereco}
               status={visita.status}
+              onPress={() => {
+                  const idDestino =
+                    visita.pacienteId ||
+                    listaPacientes.find((p) => p.nome === visita.pacienteNome)?.id;
+
+                  if (idDestino) {
+                    router.push({
+                      pathname: '/perfilPacientes',
+                      params: { id: idDestino },
+                    });
+                  } else {
+                    Alert.alert('Aviso', 'Perfil deste paciente não encontrado.');
+                  }
+                }}
               onStatusPress={() => {
                 setVisitaSelecionada(visita);
                 setStatusModalVisible(true);
@@ -361,30 +367,67 @@ export default function AgendaScreen() {
         <Button title="Salvar Visita" color="#2563EB" onPress={handleSalvarVisita} />
       </BaseModal>
 
-      <Modal visible={statusModalVisible} transparent animationType="fade" onRequestClose={() => setStatusModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Alterar Status</Text>
-            <Text style={{ color: '#6b7280', marginBottom: 6 }}>
-              {visitaSelecionada?.pacienteNome} às {visitaSelecionada?.horario}
-            </Text>
+      {statusModalVisible && (
+        <Modal
+          visible={statusModalVisible}
+          transparent
+          animationType="none"
+          onRequestClose={() => setStatusModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Alterar Status</Text>
+              <Text style={{ color: '#6b7280', marginBottom: 6 }}>
+                {visitaSelecionada
+                  ? `${visitaSelecionada.pacienteNome} às ${visitaSelecionada.horario}`
+                  : ''}
+              </Text>
 
-            <TouchableOpacity style={[styles.statusOptionButton, { backgroundColor: '#f0fdf4' }]} onPress={() => handleAtualizarStatus('Atendido')}>
-              <Text style={{ color: '#16a34a', fontWeight: 'bold' }}>Marcar como Atendido</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.statusOptionButton, { backgroundColor: '#f0fdf4' }]}
+                onPress={() => handleAtualizarStatus('Atendido')}
+              >
+                <Text style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                  Marcar como Atendido
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.statusOptionButton, { backgroundColor: '#fef2f2' }]} onPress={() => handleAtualizarStatus('Faltou/Cancelado')}>
-              <Text style={{ color: '#dc2626', fontWeight: 'bold' }}>Marcar como Faltou/Cancelado</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.statusOptionButton, { backgroundColor: '#fefce8' }]}
+                onPress={() => handleAtualizarStatus('Faltou')}
+              >
+                <Text style={{ color: '#ca8a04', fontWeight: 'bold' }}>
+                  Marcar como Faltou
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.statusOptionButton, { backgroundColor: '#eff6ff' }]} onPress={() => handleAtualizarStatus('Agendado')}>
-              <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>Manter como Agendado</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.statusOptionButton, { backgroundColor: '#fef2f2' }]}
+                onPress={() => handleAtualizarStatus('Cancelado')}
+              >
+                <Text style={{ color: '#dc2626', fontWeight: 'bold' }}>
+                  Marcar como Cancelado
+                </Text>
+              </TouchableOpacity>
 
-            <Button title="Cancelar" color="#ef4444" onPress={() => setStatusModalVisible(false)} />
+              <TouchableOpacity
+                style={[styles.statusOptionButton, { backgroundColor: '#eff6ff' }]}
+                onPress={() => handleAtualizarStatus('Agendado')}
+              >
+                <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>
+                  Manter como Agendado
+                </Text>
+              </TouchableOpacity>
+
+              <Button
+                title="Fechar"
+                color="#6b7280"
+                onPress={() => setStatusModalVisible(false)}
+              />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 }

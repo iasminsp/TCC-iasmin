@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, useColorScheme, ActivityIndicator } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig'; // Ajuste o caminho se necessário
+import { db } from '../config/firebaseConfig';
 import { FunçoesCard } from '@/src/components/Funções';
 
-export default function PerfilScreen({ status = "Ativo" }: { status?: string }) {
+export default function PerfilScreen({ status = 'Ativo' }: { status?: string }) {
   const router = useRouter();
   const colorScheme = useColorScheme();
   
@@ -28,49 +28,54 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
     DN: dnParam || '',
     condicao: condicaoParam || '',
     endereco: enderecoParam || '',
+    status: status,
   });
 
-  useEffect(() => {
-    const fetchPaciente = async () => {
-      if (!id) return;
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPaciente = async () => {
+        if (!id) return;
 
-      try {
-        setLoading(true);
-        const pacienteRef = doc(db, 'pacientes', id);
-        const pacienteSnap = await getDoc(pacienteRef);
+        try {
+          setLoading(true);
+          const pacienteRef = doc(db, 'pacientes', id);
+          const pacienteSnap = await getDoc(pacienteRef);
 
-        if (pacienteSnap.exists()) {
-          const data = pacienteSnap.data();
+          if (pacienteSnap.exists()) {
+            const data = pacienteSnap.data();
 
-          let enderecoFormatado = data.endereco || '';
+            let enderecoFormatado = data.endereco || '';
 
-          if (!enderecoFormatado && (data.logradouro || data.rua)) {
-            const rua = data.logradouro || data.rua || '';
-            const num = data.imovelSemNumero ? 'S/N' : (data.numero || data.numeroImovel || '');
-            const bairro = data.bairro ? ` - ${data.bairro}` : '';
-            const municipio = data.municipio ? `, ${data.municipio}` : '';
+            if (!enderecoFormatado && (data.logradouro || data.rua)) {
+              const rua = data.logradouro || data.rua || '';
+              const num = data.imovelSemNumero ? 'S/N' : (data.numero || data.numeroImovel || '');
+              const bairro = data.bairro ? ` - ${data.bairro}` : '';
+              const municipio = data.municipio ? `, ${data.municipio}` : '';
 
-            enderecoFormatado = `${rua}${num ? `, Nº ${num}` : ''}${bairro}${municipio}`;
+              enderecoFormatado = `${rua}${num ? `, Nº ${num}` : ''}${bairro}${municipio}`;
+            }
+
+            setPacienteData({
+              nome: data.nome || nomeParam || 'Nome do Paciente',
+              DN: data.DN || dnParam || 'Não informada',
+              condicao: data.condicao || condicaoParam || 'Não informada',
+              endereco: enderecoFormatado || enderecoParam || 'Nenhum endereço cadastrado.',
+              status: data.status || status,
+            });
           }
-
-          setPacienteData({
-            nome: data.nome || nomeParam || 'Nome do Paciente',
-            DN: data.DN || dnParam || 'Não informada',
-            condicao: data.condicao || condicaoParam || 'Não informada',
-            endereco: enderecoFormatado || enderecoParam || 'Nenhum endereço cadastrado.',
-          });
+        } catch (error) {
+          console.error('Erro ao buscar dados do paciente no perfil:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Erro ao buscar dados do paciente no perfil:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchPaciente();
-  }, [id, nomeParam, dnParam, condicaoParam, enderecoParam]);
+      fetchPaciente();
+    }, [id, nomeParam, dnParam, condicaoParam, enderecoParam, status])
+  );
 
-  const { nome, DN, condicao, endereco } = pacienteData;
+  const { nome, DN, condicao, endereco, status: statusAtual } = pacienteData;
+  const isInativo = statusAtual.toLowerCase().includes('inativo');
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -78,19 +83,31 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
         <Ionicons name="person-circle-sharp" size={100} color={textColor} />
         <View style={{ flexDirection: 'column', marginLeft: 20, flex: 1 }}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor, marginTop: 10 }}>
-            {nome || "Nome do Paciente"}
+            {nome || 'Nome do Paciente'}
           </Text>
           <Text style={{ fontSize: 15, color: textColor, marginTop: 6 }}>
-            DN: {DN || "Não informada"}
+            DN: {DN || 'Não informada'}
           </Text>
           <Text style={{ fontSize: 15, color: textColor, marginTop: 6 }}>
-            Condição: {condicao || "Não informada"}
+            Condição: {condicao || 'Não informada'}
           </Text>
         </View>
       </View>
 
-      <View style={styles.statusBadge}>
-        <Text style={styles.statusText}>{status}</Text>
+      <View
+        style={[
+          styles.statusBadge,
+          isInativo && styles.statusBadgeInativo,
+        ]}
+      >
+        <Text
+          style={[
+            styles.statusText,
+            isInativo && styles.statusTextInativo,
+          ]}
+        >
+          {statusAtual}
+        </Text>
       </View>
 
       <View style={[styles.enderecoCard, { backgroundColor: cardBgColor }]}>
@@ -98,7 +115,7 @@ export default function PerfilScreen({ status = "Ativo" }: { status?: string }) 
           <ActivityIndicator color="#0055A5" />
         ) : (
           <Text style={[styles.enderecoValue, { color: textColor }]}>
-            {endereco || "Nenhum endereço cadastrado."}
+            {endereco || 'Nenhum endereço cadastrado.'}
           </Text>
         )}
       </View>
@@ -149,17 +166,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     borderColor: '#2564eb4b',
     borderWidth: 1,
-    width: 100,
+    alignSelf: 'flex-start',
     alignItems: 'center',
-    paddingVertical: 2,
-    paddingHorizontal: 25,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
     borderRadius: 6,
     margin: 20,
   },
+  statusBadgeInativo: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#DC26264b',
+  },
   statusText: {
     color: '#2563EB',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
+  },
+  statusTextInativo: {
+    color: '#DC2626',
   },
   enderecoCard: {
     borderRadius: 16,

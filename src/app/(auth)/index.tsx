@@ -48,7 +48,7 @@ export default function LoginScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="00011122255@gmailouCPF"
+            placeholder="00011122255@gmail.com"
             placeholderTextColor="#a1a1aa"
             value={loginInput}
             onChangeText={setLoginInput}

@@ -21,7 +21,7 @@ const EQUIPES_OPCOES = ['EMAD 1', 'EMAD 2'];
 export default function RegisterScreen() {
   const router = useRouter();
 
-  // API CBO
+  // data CBO
   const [cboQuery, setCboQuery] = useState('');
   const [cboResults, setCboResults] = useState<CBOItem[]>([]);
   const [selectedCBO, setSelectedCBO] = useState<CBOItem | null>(null);
@@ -128,7 +128,7 @@ export default function RegisterScreen() {
           <Ionicons name="checkmark" size={18} color="#a1a1aa" />
         </View>
 
-        <Text style={styles.label}>CPF ou email p/ login</Text>
+        <Text style={styles.label}>e-mail p/ login</Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}

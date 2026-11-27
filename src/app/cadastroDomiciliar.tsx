@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  useColorScheme,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Switch,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, ScrollView, TextInput, TouchableOpacity, Switch, ActivityIndicator, Alert,} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 
-// Opções para os seletores / radio buttons
 const SITUACAO_MORADIA_OPCOES = [
   'Próprio',
   'Financiado',
@@ -103,7 +91,6 @@ export default function CadastroDomiciliar() {
     posseTerra: '',
   });
 
-  // Função para buscar dados do CEP
   const handleCepChange = async (cepValue: string) => {
     handleChange('cep', cepValue);
 
@@ -138,7 +125,6 @@ export default function CadastroDomiciliar() {
       try {
         setLoadingPaciente(true);
 
-        // SE VEIO DO HISTÓRICO: Carrega o cadastro salvo 
         if (params.atendimentoId) {
           const docRef = doc(db, 'atendimentos', params.atendimentoId);
           const docSnap = await getDoc(docRef);
@@ -161,14 +147,12 @@ export default function CadastroDomiciliar() {
 
             setFormData((prev) => ({
               ...prev,
-              // Paciente
               pacienteNome: data.nome || params.nome || '',
               dataNascimento: data.DN || params.DN || '',
               numCartaoSus: data.numCartaoSus || data.cpf || '',
               sexo: data.sexo || '',
               telefone: data.telefone || '',
 
-              // Endereço
               municipio: data.municipio || 'Patos de Minas',
               bairro: data.bairro || prev.bairro,
               logradouro: data.logradouro || data.endereco || params.endereco || prev.logradouro,
@@ -253,7 +237,6 @@ export default function CadastroDomiciliar() {
         cep: formData.cep,
       });
 
-      // 2. Salva o Cadastro Domiciliar na coleção principal 'atendimentos' vinculando o pacienteId
       await addDoc(collection(db, 'atendimentos'), {
         pacienteId: params.id,
         tipo: 'Cadastro Domiciliar',

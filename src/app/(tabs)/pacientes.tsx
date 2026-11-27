@@ -29,7 +29,6 @@ export default function PacientesScreen() {
   const [loading, setLoading] = useState(true);
   const [termoBusca, setTermoBusca] = useState('');
 
-  // Estados do formulário de cadastro
   const [nome, setNome] = useState('');
   const [condicao, setCondicao] = useState('');
   const [dn, setDn] = useState('');
@@ -62,7 +61,6 @@ export default function PacientesScreen() {
     return () => unsubscribe();
   }, []);
 
-  // Formata o texto digitado no padrão DD/MM/AAAA
   const handleDnChange = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
     let formatted = cleaned;
@@ -76,7 +74,6 @@ export default function PacientesScreen() {
     setDn(formatted);
   };
 
-  // Busca dados na API ViaCEP
   const buscarCep = async (valorCep: string) => {
     const cepLimpo = valorCep.replace(/\D/g, '');
     setCep(cepLimpo);
@@ -125,7 +122,6 @@ export default function PacientesScreen() {
         createdAt: serverTimestamp(),
       });
 
-      // Limpa formulário
       setNome('');
       setCondicao('');
       setDn('');
@@ -204,7 +200,6 @@ export default function PacientesScreen() {
           style={styles.input}
         />
 
-        {/* Campos de endereço */}
         <TextInput
           placeholder="CEP (somente números)"
           placeholderTextColor="#9ca3af"

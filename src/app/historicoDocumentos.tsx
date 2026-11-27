@@ -15,7 +15,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 
-// Interface do item do histórico retornado do Firestore
 interface HistoricoItem {
   id: string;
   numeroAtendimento: string;
@@ -26,7 +25,6 @@ interface HistoricoItem {
   formData?: any;
 }
 
-// Mapeamento do tipo de ficha salvo no banco para a rota de visualização/edição
 const ROTA_POR_TIPO: Record<string, string> = {
   SOAP: '/Soap',
   'Atendimento SOAP': '/Soap',
@@ -47,7 +45,6 @@ export default function HistoricoAtendimentos() {
   const borderColor = isDark ? '#333333' : '#E0E0E0';
   const placeholderColor = isDark ? '#888888' : '#999999';
 
-  // ID do paciente vindo da navegação do Perfil
   const { id: pacienteId, nome: pacienteNome, DN: pacienteDn } = useLocalSearchParams<{
     id?: string;
     nome?: string;
@@ -62,7 +59,6 @@ export default function HistoricoAtendimentos() {
   const [todosDocumentos, setTodosDocumentos] = useState<HistoricoItem[]>([]);
   const [historicoList, setHistoricoList] = useState<HistoricoItem[]>([]);
 
-  // Busca atendimentos do paciente no Firestore (subcoleção 'pacientes/{id}/atendimentos' + coleção raiz 'atendimentos')
   useEffect(() => {
     const fetchHistorico = async () => {
       if (!pacienteId) {
@@ -76,7 +72,6 @@ export default function HistoricoAtendimentos() {
           const data = docSnap.data();
           const tipo = data.tipo || 'Atendimento';
 
-          // Trata carimbo de data/hora
           let dataHoraStr = 'Data não informada';
           let dateObj: Date | null = null;
 
@@ -92,7 +87,6 @@ export default function HistoricoAtendimentos() {
             dataHoraStr = data.formData.inicioAtendimento || data.formData.data;
           }
 
-          // Número/Código do atendimento ou ficha
           const numAtendimento =
             data.codigoFicha ||
             data.formData?.codigoFicha ||
@@ -112,7 +106,6 @@ export default function HistoricoAtendimentos() {
 
         const listaMap = new Map<string, HistoricoItem>();
 
-        // 1. Busca na subcoleção do paciente: /pacientes/{pacienteId}/atendimentos
         try {
           const subColRef = collection(db, 'pacientes', pacienteId, 'atendimentos');
           const subSnap = await getDocs(subColRef);
@@ -123,7 +116,6 @@ export default function HistoricoAtendimentos() {
           console.log('Sem subcoleção de atendimentos ou erro ao buscar:', e);
         }
 
-        // 2. Busca na coleção raiz: /atendimentos com pacienteId == pacienteId
         try {
           const raizRef = collection(db, 'atendimentos');
           const qRaiz = query(raizRef, where('pacienteId', '==', pacienteId));
@@ -139,7 +131,6 @@ export default function HistoricoAtendimentos() {
 
         const lista = Array.from(listaMap.values());
 
-        // Ordena data mais recente
         lista.sort((a, b) => {
           const timeA = a.rawDate ? a.rawDate.getTime() : 0;
           const timeB = b.rawDate ? b.rawDate.getTime() : 0;
@@ -158,7 +149,7 @@ export default function HistoricoAtendimentos() {
     fetchHistorico();
   }, [pacienteId]);
 
-  // Função pra achar dattaa
+  // isso é  pra achar datta
   const parseDateBR = (dateStr: string): Date | null => {
     const parts = dateStr.trim().split('/');
     if (parts.length === 3) {
@@ -172,18 +163,16 @@ export default function HistoricoAtendimentos() {
     return null;
   };
 
-  // Função para filtrar localmente os itens retornados do banco por tipo e intervalo de datas
   const handleSearch = () => {
     let filtrado = [...todosDocumentos];
 
-    // Filtro por Tipo de Documento
+    // por Tipo de Documento
     if (tipoFiltro.trim()) {
       filtrado = filtrado.filter((item) =>
         item.tipoDocumento.toLowerCase().includes(tipoFiltro.toLowerCase())
       );
     }
 
-    // Filtro por Data Início
     if (dataInicio.trim()) {
       const startDate = parseDateBR(dataInicio);
       if (startDate) {
@@ -195,7 +184,6 @@ export default function HistoricoAtendimentos() {
       }
     }
 
-    // Filtro por Data Fim
     if (dataFim.trim()) {
       const endDate = parseDateBR(dataFim);
       if (endDate) {

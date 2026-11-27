@@ -67,12 +67,10 @@ export default function HomeScreen() {
       setLoading(false);
     });
 
-    // Total de Pacientes at
     const unsubscribePacientes = onSnapshot(collection(db, 'pacientes'), (snapshot) => {
       setTotalPacientes(snapshot.size);
     });
 
-    // Total de Atendimentos do MÊS 
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
@@ -98,7 +96,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View>
-        <Headerhome title="Olá Dra. iasmin" />
+        <Headerhome title="Olá Dra." />
       </View>
 
       <Text style={{ color: textColor, fontWeight: 'bold', fontSize: 18, margin: 20 }}>

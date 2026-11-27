@@ -8,7 +8,7 @@ import { CheckboxOption } from '@/src/components/Checkbox';
 import { Seletor } from '@/src/components/Seletor';
 import { CIAP2_SAD_OPCOES } from '@/src/data/ciapData';
 import { CID10_SAD_OPCOES } from '@/src/data/cidData';
-import { PROCEDIMENTOS_SAD_OPCOES } from '@/src/data/procedimentosSigtapData.ts';
+import { PROCEDIMENTOS_SAD_OPCOES } from '@/src/data/procedimentosSigtapData';
 import { CONDICOES_OPCOES, CONDICOES_OPCOES2, MODALIDADE_AD_ATENDIMENTO_OPCOES, TIPO_ATENDIMENTO_OPCOES } from '@/src/data/atendimentoData';
 
 export default function AtendimentoDomiciliar() {
@@ -453,7 +453,6 @@ export default function AtendimentoDomiciliar() {
           />
         </View>
 
-        {/* CONDUTA / MOTIVOS SAÍDA */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>CONDUTA / MOTIVOS SAÍDA</Text>
         </View>

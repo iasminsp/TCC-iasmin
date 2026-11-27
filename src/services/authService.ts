@@ -7,7 +7,6 @@ import { auth, db } from '../config/firebaseConfig';
 
 export const cleanCPF = (cpf: string) => cpf.replace(/\D/g, '');
 
-// Adicionados cargo, equipe e turno
 interface RegisterData {
   nome: string;
   cpfOrEmail: string;
@@ -41,7 +40,6 @@ export const registerUser = async (data: RegisterData) => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
   const uid = userCredential.user.uid;
 
-  // Guarda o perfil com todos os dados do médico na coleção 'users'
   await setDoc(doc(db, 'users', uid), {
     nome,
     cpf: rawCpf,

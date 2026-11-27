@@ -158,8 +158,21 @@ export default function Elegibilidade() {
       return;
     }
 
+    if (!formData.modalidadeAd) {
+      Alert.alert('Atenção', 'Selecione a conclusão / modalidade AD antes de salvar.');
+      return;
+    }
+
     setSaving(true);
     try {
+      const modalidadeUpper = formData.modalidadeAd.toUpperCase();
+      const isAdmitidoSad =
+        modalidadeUpper.includes('AD1') ||
+        modalidadeUpper.includes('AD2') ||
+        modalidadeUpper.includes('AD3');
+
+      const novoStatus = isAdmitidoSad ? 'Ativo' : 'Inativo - Não elegível';
+
       const pacienteRef = doc(db, 'pacientes', params.id);
       await updateDoc(pacienteRef, {
         nome: formData.pacienteNome,
@@ -167,6 +180,8 @@ export default function Elegibilidade() {
         numCartaoSus: formData.numCartaoSus,
         sexo: formData.sexo,
         telefone: formData.telefone,
+        modalidadeAd: formData.modalidadeAd,
+        status: novoStatus,
       });
 
       await addDoc(collection(db, 'pacientes', params.id, 'atendimentos'), {
@@ -318,6 +333,7 @@ export default function Elegibilidade() {
           )}
         </View>
 
+        {/* PACIENTE */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>PACIENTE</Text>
         </View>
@@ -384,6 +400,7 @@ export default function Elegibilidade() {
           </View>
         </View>
 
+        {/* PROCEDÊNCIA */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>PROCEDÊNCIA*</Text>
         </View>
